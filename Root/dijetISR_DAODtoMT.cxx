@@ -13,15 +13,19 @@
 #include "xAODJet/JetContainer.h"
 #include "xAODEgamma/PhotonContainer.h"
 
+#include "TH1.h"
+
 #include <dijetISR/dijetISR_DAODtoMT.h>
 
 ClassImp(dijetISR_DAODtoMT)
 
 dijetISR_DAODtoMT::dijetISR_DAODtoMT() {
     m_fatJetContainerName = "";
+    m_jetContainerName = "";
     m_photonContainerName = "";
     m_eventInfoDetailStr = "";
     m_fatJetDetailStr = "";
+    m_jetDetailStr = "";
     m_photonDetailStr = "";
 }
 
@@ -45,7 +49,8 @@ EL::StatusCode dijetISR_DAODtoMT::initialize() {
     
     m_tree = new dijetISR_Minitree(m_event, outTree, treeFile);
     m_tree->AddEvent(m_eventInfoDetailStr);
-    m_tree->AddFatJets(m_fatJetDetailStr);
+    m_tree->AddFatJets(m_fatJetDetailStr, "signal");
+    m_tree->AddJets(m_jetDetailStr);
     m_tree->AddPhotons(m_photonDetailStr);
 
     return EL::StatusCode::SUCCESS;
@@ -72,19 +77,33 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
     const xAOD::JetContainer *fatJets = 0;
     RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(fatJets, m_fatJetContainerName, m_event, m_store), "");
 
+    // get jets
+    const xAOD::JetContainer *jets = 0;
+    RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(jets, m_jetContainerName, m_event, m_store), "");
+
     // get photons
     const xAOD::PhotonContainer *photons = 0;
     RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(photons, m_photonContainerName, m_event, m_store), "");
 
     // fill tree branches
     m_tree->FillEvent(eventInfo, m_event);
-    m_tree->FillFatJets(fatJets);
+    m_tree->FillFatJets(fatJets, "signal");
+    m_tree->FillJets(jets);
     m_tree->FillPhotons(photons);
     m_tree->Fill();
 
     return EL::StatusCode::SUCCESS;
 }
 
-EL::StatusCode dijetISR_DAODtoMT::finalize() {
+EL::StatusCode dijetISR_DAODtoMT::histFinalize() {
+    RETURN_CHECK("dijetISR_DAODtoMT::histFinalize()", xAH::Algorithm::algFinalize(), "");
+
+    // copy metadata to output minitree
+    TFile *fileMD = wk()->getOutputFile("metadata");
+    TH1D *histEventCount = (TH1D*) fileMD->Get("MetaData_EventCount");
+    TFile *treeFile = wk()->getOutputFile("Minitree");
+    TH1F *thisHistEventCount = (TH1F*) histEventCount->Clone("MetaData");
+    thisHistEventCount->SetDirectory(treeFile);
+
     return EL::StatusCode::SUCCESS;
 }

@@ -19,6 +19,7 @@ class dijetISR_DAODtoMT : public xAH::Algorithm {
         std::string m_jetContainerName;
         std::string m_photonContainerName;
         std::string m_eventInfoDetailStr;
+        std::string m_trigDetailStr;
         std::string m_fatJetDetailStr;
         std::string m_jetDetailStr;
         std::string m_photonDetailStr;

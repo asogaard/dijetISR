@@ -24,6 +24,7 @@ dijetISR_DAODtoMT::dijetISR_DAODtoMT() {
     m_jetContainerName = "";
     m_photonContainerName = "";
     m_eventInfoDetailStr = "";
+    m_trigDetailStr = "";
     m_fatJetDetailStr = "";
     m_jetDetailStr = "";
     m_photonDetailStr = "";
@@ -49,6 +50,7 @@ EL::StatusCode dijetISR_DAODtoMT::initialize() {
     
     m_tree = new dijetISR_Minitree(m_event, outTree, treeFile);
     m_tree->AddEvent(m_eventInfoDetailStr);
+    m_tree->AddTrigger(m_trigDetailStr);
     m_tree->AddFatJets(m_fatJetDetailStr, "signal");
     m_tree->AddJets(m_jetDetailStr);
     m_tree->AddPhotons(m_photonDetailStr);
@@ -87,6 +89,7 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
 
     // fill tree branches
     m_tree->FillEvent(eventInfo, m_event);
+    m_tree->FillTrigger(eventInfo);
     m_tree->FillFatJets(fatJets, "signal");
     m_tree->FillJets(jets);
     m_tree->FillPhotons(photons);

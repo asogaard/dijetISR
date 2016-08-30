@@ -14,12 +14,6 @@ do
     folders[i++]="$line"
 done < <(ls --color=never -1 -d ${SUFFIX}*)
 
-echo "Affected folders:"
-for f in ${folders[@]}
-do
-    echo $f
-done
-
 if [ -f files_${SUFFIX}.list ]
 then
     rm files_${SUFFIX}.list
@@ -28,6 +22,9 @@ touch files_${SUFFIX}.list
 
 for f in ${folders[@]}
 do
+    echo ${f#"${SUFFIX}_"}
+    #cat=${f#"${SUFFIX}_"}
+    #echo "# ${cat}" >> files_${SUFFIX}.list
     while read line
     do
         read arg1 <<< `echo $line | awk -F. '{print $1;}'` 

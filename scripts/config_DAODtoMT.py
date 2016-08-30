@@ -151,6 +151,7 @@ c.setalg("dijetISR_DAODtoMT", { "m_fatJetContainerName"  : "SelFatJets",
                                 "m_jetContainerName"     : "SelJets",
                                 "m_photonContainerName"  : "SelPhotons",
                                 "m_eventInfoDetailStr"   : "pileup",
+                                "m_trigDetailStr"        : "passTriggers",
                                 "m_fatJetDetailStr"      : "kinematic substructure",
                                 "m_jetDetailStr"         : "kinematic",
                                 "m_photonDetailStr"      : "kinematic isolation PID"

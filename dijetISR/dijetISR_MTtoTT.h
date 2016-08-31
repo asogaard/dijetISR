@@ -10,6 +10,12 @@
 #include "TTree.h"
 #include "TH1.h"
 
+enum dijetISRCategory {
+    _none,
+    _jet,
+    _gamma
+};
+
 class dijetISR_MTtoTT : public xAH::Algorithm {
     public:
         dijetISR_MTtoTT();
@@ -22,6 +28,10 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         void initializeInTree();
         void initializeOutTree();
         void copyMetaData();
+
+        void resetBranches();
+        bool passPhotonTrigger(int runNumber);
+        bool passJetTrigger(int runNumber);
 
         // options
         bool m_applyGRL;
@@ -46,37 +56,44 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         std::vector<float> *in_mJ; //!
         std::vector<float> *in_ptJ; //!
         std::vector<float> *in_etaJ; //!
+        std::vector<float> *in_phiJ; //!
         std::vector<float> *in_D2J; //!
         std::vector<float> *in_C2J; //!
         std::vector<float> *in_tau21J; //!
-        int in_nj; //!
-        std::vector<float> *in_ptj; //!
-        std::vector<float> *in_etaj; //!
         int in_ngamma; //!
         std::vector<float> *in_ptgamma; //!
         std::vector<float> *in_etagamma; //!
+        std::vector<float> *in_phigamma; //!
+        int in_nj; //!
+        std::vector<float> *in_ptj; //!
+        std::vector<float> *in_etaj; //!
+        std::vector<float> *in_phij; //!
 
         // output tree branches
         TTree *m_outTree; //!
         int out_runNumber; //!
         long long out_eventNumber; //!
+        int out_category; //!
         float out_weight; //!
         float out_mJ; //!
         float out_ptJ; //!
         float out_etaJ; //!
+        float out_phiJ; //!
         float out_D2J; //!
         float out_C2J; //!
         float out_tau21J; //!
-        float out_ptj; //!
-        float out_etaj; //!
         float out_ptgamma; //!
         float out_etagamma; //!
-        float out_dRJj; //!
-        float out_dEtaJj; //!
-        float out_dPhiJj; //!
-        float out_dRJgamma; //!
+        float out_phigamma; //!
+        float out_ptj; //!
+        float out_etaj; //!
+        float out_phij; //1
         float out_dEtaJgamma; //!
         float out_dPhiJgamma; //!
+        float out_dRJgamma; //!
+        float out_dEtaJj; //!
+        float out_dPhiJj; //!
+        float out_dRJj; //!
 
         // MetaData
         TH1F *m_metaData; //!

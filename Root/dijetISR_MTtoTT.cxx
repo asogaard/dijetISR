@@ -5,9 +5,12 @@
 #include <utility>      
 #include <iostream>
 #include <fstream>
+#include <math.h>
 
 #include "TFile.h"
 #include "TSystem.h"
+#include "TMath.h"
+#include "TLorentzVector.h"
 
 #include <dijetISR/dijetISR_MTtoTT.h>
 
@@ -83,7 +86,14 @@ EL::StatusCode dijetISR_MTtoTT::changeInput(bool firstFile) {
 }
 
 EL::StatusCode dijetISR_MTtoTT::execute() {
+    // get entry from tree
     wk()->tree()->GetEntry(wk()->treeEntry());
+
+    // reset out tree branches
+    resetBranches();
+        
+    out_runNumber = in_runNumber;
+    out_eventNumber = in_eventNumber;
 
     // LASER - TODO: put in PRW
     
@@ -95,11 +105,43 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         } 
     }
 
+    // trigger & categorization
+    int runNumber = 0;
+    if (!m_isMC) runNumber = in_runNumber;
+    else {} // LASER - TODO: handle random run number for MC
+    if (passPhotonTrigger(runNumber)) out_category = _gamma;
+    else if (passJetTrigger(runNumber)) out_category = _jet;
+    else return EL::StatusCode::SUCCESS;
+
     if (in_nJ > 0) {
-        out_runNumber = in_runNumber;
-        out_eventNumber = in_eventNumber;
-        out_mJ = in_mJ->at(0);
         out_weight = in_weight;
+        out_mJ = in_mJ->at(0);
+        out_ptJ = in_ptJ->at(0);
+        out_etaJ = in_etaJ->at(0);
+        out_phiJ = in_phiJ->at(0);
+        out_D2J = in_D2J->at(0);
+        out_C2J = in_C2J->at(0);
+        out_tau21J = in_tau21J->at(0);
+        if (out_category == _gamma && in_ngamma > 0) {
+            out_ptgamma = in_ptgamma->at(0);
+            out_etagamma = in_etagamma->at(0);
+            out_phigamma = in_phigamma->at(0);
+            TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
+            TLorentzVector tlvgamma; tlvgamma.SetPtEtaPhiM(out_ptgamma, out_etagamma, out_phigamma, 0);
+            out_dEtaJgamma = fabs(tlvJ.Eta() - tlvgamma.Eta());
+            out_dPhiJgamma = tlvJ.DeltaPhi(tlvgamma);
+            out_dRJgamma = tlvJ.DeltaR(tlvgamma);
+        }
+        if (out_category == _jet && in_nj > 0) {
+            out_ptj = in_ptj->at(0);
+            out_etaj = in_etaj->at(0);
+            out_phij = in_phij->at(0);
+            TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
+            TLorentzVector tlvj; tlvj.SetPtEtaPhiM(out_ptj, out_etaj, out_phij, 0);
+            out_dEtaJj = fabs(tlvJ.Eta() - tlvj.Eta());
+            out_dPhiJj = tlvJ.DeltaPhi(tlvj);
+            out_dRJj = tlvJ.DeltaR(tlvj);
+        }
         m_outTree->Fill();
     }
 
@@ -107,16 +149,20 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
 }
 
 void dijetISR_MTtoTT::initializeVectors() {
+    in_passedTriggers = 0;
     in_mJ = 0;
     in_ptJ = 0;
     in_etaJ = 0;
+    in_phiJ = 0;
     in_D2J = 0;
     in_C2J = 0;
     in_tau21J = 0;
-    in_ptj = 0;
-    in_etaj = 0;
     in_ptgamma = 0;
     in_etagamma = 0;
+    in_phigamma = 0;
+    in_ptj = 0;
+    in_etaj = 0;
+    in_phij = 0;
 }
 
 void dijetISR_MTtoTT::initializeInTree() {
@@ -124,11 +170,23 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("eventNumber", &in_eventNumber);
     wk()->tree()->SetBranchAddress("lumiBlock", &in_lumiblock);
     wk()->tree()->SetBranchAddress("weight", &in_weight);
+    wk()->tree()->SetBranchAddress("passedTriggers", &in_passedTriggers);
     wk()->tree()->SetBranchAddress("nfatjetssignal", &in_nJ);
     wk()->tree()->SetBranchAddress("fatjet_m_signal", &in_mJ);
     wk()->tree()->SetBranchAddress("fatjet_pt_signal", &in_ptJ);
+    wk()->tree()->SetBranchAddress("fatjet_eta_signal", &in_etaJ);
+    wk()->tree()->SetBranchAddress("fatjet_phi_signal", &in_phiJ);
+    wk()->tree()->SetBranchAddress("fatjet_D2_signal", &in_D2J);
+    wk()->tree()->SetBranchAddress("fatjet_C2_signal", &in_C2J);
+    wk()->tree()->SetBranchAddress("fatjet_tau21_wta_signal", &in_tau21J);
     wk()->tree()->SetBranchAddress("nph", &in_ngamma);
     wk()->tree()->SetBranchAddress("ph_pt", &in_ptgamma);
+    wk()->tree()->SetBranchAddress("ph_eta", &in_etagamma);
+    wk()->tree()->SetBranchAddress("ph_phi", &in_phigamma);
+    wk()->tree()->SetBranchAddress("njets", &in_nj);
+    wk()->tree()->SetBranchAddress("jet_pt", &in_ptj);
+    wk()->tree()->SetBranchAddress("jet_eta", &in_etaj);
+    wk()->tree()->SetBranchAddress("jet_phi", &in_phij);
 }
 
 void dijetISR_MTtoTT::initializeOutTree() {
@@ -136,8 +194,27 @@ void dijetISR_MTtoTT::initializeOutTree() {
     
     m_outTree->Branch("runNumber", &out_runNumber, "runNumber/I");
     m_outTree->Branch("eventNumber", &out_eventNumber, "eventNumber/LI");
-    m_outTree->Branch("mJ", &out_mJ, "mJ/F");
+    m_outTree->Branch("category", &out_category, "category/I");
     m_outTree->Branch("weight", &out_weight, "weight/F");
+    m_outTree->Branch("mJ", &out_mJ, "mJ/F");
+    m_outTree->Branch("ptJ", &out_ptJ, "ptJ/F");
+    m_outTree->Branch("etaJ", &out_etaJ, "etaJ/F");
+    m_outTree->Branch("phiJ", &out_phiJ, "phiJ/F");
+    m_outTree->Branch("D2J", &out_D2J, "D2J/F");
+    m_outTree->Branch("C2J", &out_C2J, "C2J/F");
+    m_outTree->Branch("tau21J", &out_tau21J, "tau21J/F");
+    m_outTree->Branch("ptgamma", &out_ptgamma, "ptgamma/F");
+    m_outTree->Branch("etagamma", &out_etagamma, "etagamma/F");
+    m_outTree->Branch("phigamma", &out_phigamma, "phigamma/F");
+    m_outTree->Branch("ptj", &out_ptj, "ptj/F");
+    m_outTree->Branch("etaj", &out_etaj, "etaj/F");
+    m_outTree->Branch("phij", &out_phij, "phij/F");
+    m_outTree->Branch("dEtaJgamma", &out_dEtaJgamma, "dEtaJgamma/F");
+    m_outTree->Branch("dPhiJgamma", &out_dPhiJgamma, "dPhiJgamma/F");
+    m_outTree->Branch("dRJgamma", &out_dRJgamma, "dRJgamma/F");
+    m_outTree->Branch("dEtaJj", &out_dEtaJj, "dEtaJj/F");
+    m_outTree->Branch("dPhiJj", &out_dPhiJj, "dPhiJj/F");
+    m_outTree->Branch("dRJj", &out_dRJj, "dRJj/F");
 
     wk()->addOutput(m_outTree);
 }
@@ -150,4 +227,78 @@ void dijetISR_MTtoTT::copyMetaData() {
 
     TH1F *md = (TH1F*) wk()->inputFile()->Get("MetaData");
     m_metaData->Fill(1, md->GetBinContent(3));
+}
+
+void dijetISR_MTtoTT::resetBranches() {
+        out_runNumber = -999;
+        out_eventNumber = -999;
+        out_category = _none;
+        out_weight = -999;
+        out_mJ = -999;
+        out_ptJ = -999;
+        out_etaJ = -999;
+        out_phiJ = -999;
+        out_D2J = -999;
+        out_C2J = -999;
+        out_tau21J = -999;
+        out_ptgamma = -999;
+        out_etagamma = -999;
+        out_phigamma = -999;
+        out_ptj = -999;
+        out_etaj = -999;
+        out_phij = -999;
+        out_dEtaJgamma = -999;
+        out_dPhiJgamma = -999;
+        out_dRJgamma = -999;
+        out_dEtaJj = -999;
+        out_dPhiJj = -999;
+        out_dRJj = -999;
+}
+
+bool dijetISR_MTtoTT::passPhotonTrigger(int runNumber) {
+    // 2015
+    if (runNumber <= 284484) {
+        for (auto t : *in_passedTriggers) {
+            if (t == "HLT_g120_loose" || t == "HLT_g200_etcut") return true;
+        }
+    }
+    // 2016
+    else {
+        for (auto t : *in_passedTriggers) {
+            if (t == "HLT_g140_loose" || t == "HLT_g300_etcut") return true;
+        }
+    }
+
+    // didn't find a passed trigger
+    return false;
+}
+
+bool dijetISR_MTtoTT::passJetTrigger(int runNumber) {
+    // 2015
+    if (runNumber <= 284484) {
+        for (auto t : *in_passedTriggers) {
+            if (t == "HLT_j360" || t == "HLT_j360_a10r_L1J100" || t == "HLT_j360_a10_sub_L1J100" || t == "HLT_ht700_L1J75") return true;
+        }
+    }
+    // 2016 period A
+    else if (runNumber >= 296939 && runNumber <= 300287) {
+        for (auto t : *in_passedTriggers) {
+            if (t == "HLT_j340" || t == "HLT_j360_a10r_L1J100" || t == "HLT_j360_a10_lcw_L1J100" || t == "HLT_ht700_L1J75") return true;
+        }
+    }
+    // 2016 period B-E
+    else if (runNumber >= 300345 && runNumber <= 303892) {
+        for (auto t : *in_passedTriggers) {
+            if (t == "HLT_j380" || t == "HLT_j400_a10r_L1J100" || t == "HLT_j400_a10_lcw_L1J100" || t == "HLT_ht1000" || t == "HLT_ht1000_L1J100") return true;
+        }
+    }
+    // 2016 period F-
+    else if (runNumber >= 303943) {
+        for (auto t : *in_passedTriggers) {
+            if (t == "HLT_j380" || t == "HLT_j420_a10r_L1J100" || t == "HLT_j420_a10_lcw_L1J100" || t == "HLT_ht1000" || t == "HLT_ht1000_L1J100") return true;
+        }
+    }
+
+    // didn't find a passed trigger
+    return false;
 }

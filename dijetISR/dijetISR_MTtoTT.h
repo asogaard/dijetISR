@@ -65,6 +65,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         std::vector<float> *in_etagamma; //!
         std::vector<float> *in_phigamma; //!
         int in_nj; //!
+        std::vector<float> *in_Ej; //!
         std::vector<float> *in_ptj; //!
         std::vector<float> *in_etaj; //!
         std::vector<float> *in_phij; //!

@@ -109,9 +109,9 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     int runNumber = 0;
     if (!m_isMC) runNumber = in_runNumber;
     else {} // LASER - TODO: handle random run number for MC
-    if (passPhotonTrigger(runNumber)) out_category = _gamma;
-    else if (passJetTrigger(runNumber)) out_category = _jet;
-    else return EL::StatusCode::SUCCESS;
+    bool b_passPhotonTrigger = passPhotonTrigger(runNumber);
+    bool b_passJetTrigger = passJetTrigger(runNumber);
+    if (!b_passPhotonTrigger && !b_passJetTrigger) return EL::StatusCode::SUCCESS;
 
     if (in_nJ > 0) {
         out_weight = in_weight;
@@ -122,7 +122,8 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         out_D2J = in_D2J->at(0);
         out_C2J = in_C2J->at(0);
         out_tau21J = in_tau21J->at(0);
-        if (out_category == _gamma && in_ngamma > 0) {
+        if (b_passPhotonTrigger && in_ngamma > 0) {
+            out_category = _gamma;
             out_ptgamma = in_ptgamma->at(0);
             out_etagamma = in_etagamma->at(0);
             out_phigamma = in_phigamma->at(0);
@@ -132,15 +133,21 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
             out_dPhiJgamma = tlvJ.DeltaPhi(tlvgamma);
             out_dRJgamma = tlvJ.DeltaR(tlvgamma);
         }
-        if (out_category == _jet && in_nj > 0) {
-            out_ptj = in_ptj->at(0);
-            out_etaj = in_etaj->at(0);
-            out_phij = in_phij->at(0);
+        if (b_passJetTrigger && in_nj > 0) {
             TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
-            TLorentzVector tlvj; tlvj.SetPtEtaPhiM(out_ptj, out_etaj, out_phij, 0);
-            out_dEtaJj = fabs(tlvJ.Eta() - tlvj.Eta());
-            out_dPhiJj = tlvJ.DeltaPhi(tlvj);
-            out_dRJj = tlvJ.DeltaR(tlvj);
+            for (int ij = 0; ij < in_nj; ij++) {
+                TLorentzVector tlvj; tlvj.SetPtEtaPhiE(in_ptj->at(ij), in_etaj->at(ij), in_phij->at(ij), in_Ej->at(ij));
+                if (fabs(tlvJ.DeltaPhi(tlvj)) > TMath::Pi() / 2.) {
+                    out_category = _jet;
+                    out_ptj = in_ptj->at(ij);
+                    out_etaj = in_etaj->at(ij);
+                    out_phij = in_phij->at(ij);
+                    out_dEtaJj = fabs(tlvJ.Eta() - tlvj.Eta());
+                    out_dPhiJj = tlvJ.DeltaPhi(tlvj);
+                    out_dRJj = tlvJ.DeltaR(tlvj);
+                    break;
+                }
+            }
         }
         m_outTree->Fill();
     }
@@ -160,6 +167,7 @@ void dijetISR_MTtoTT::initializeVectors() {
     in_ptgamma = 0;
     in_etagamma = 0;
     in_phigamma = 0;
+    in_Ej = 0;
     in_ptj = 0;
     in_etaj = 0;
     in_phij = 0;
@@ -184,6 +192,7 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("ph_eta", &in_etagamma);
     wk()->tree()->SetBranchAddress("ph_phi", &in_phigamma);
     wk()->tree()->SetBranchAddress("njets", &in_nj);
+    wk()->tree()->SetBranchAddress("jet_E", &in_Ej);
     wk()->tree()->SetBranchAddress("jet_pt", &in_ptj);
     wk()->tree()->SetBranchAddress("jet_eta", &in_etaj);
     wk()->tree()->SetBranchAddress("jet_phi", &in_phij);

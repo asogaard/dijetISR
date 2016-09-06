@@ -19,12 +19,14 @@ triggers = ",".join(triggersList)
 
 if args.is_MC:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC'
+    deriv = 'JETM8Kernel'
 else:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC_Insitu'
+    deriv = 'JETM6Kernel'
 
 c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelection",
                                   "m_debug"                 : False,
-                                  "m_derivationName"        : "JETM6Kernel",
+                                  "m_derivationName"        : deriv,
                                   "m_applyGRLCut"           : False,
                                   "m_doPUreweighting"       : False,
                                   "m_vertexContainerName"   : "PrimaryVertices",

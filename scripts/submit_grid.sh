@@ -17,7 +17,19 @@ then
 fi
 
 # data15
-echo ./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/data15.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_data15 --force ${PRUN}
+#./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/data15.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_data15 --force ${PRUN}
 
 # data16
-echo ./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/data16.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_data16 --force ${PRUN}
+#./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/data16.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_data16 --force ${PRUN}
+
+# jetjet
+./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/jetjet.JETM8.list --inputList --inputDQ2 --submitDir ${SUFFIX}_jetjet --force --isMC ${PRUN}
+
+# WHad
+./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/WHad.JETM8.list --inputList --inputDQ2 --submitDir ${SUFFIX}_WHad --force --isMC ${PRUN}
+
+# ZHad
+./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/ZHad.JETM8.list --inputList --inputDQ2 --submitDir ${SUFFIX}_ZHad --force --isMC ${PRUN}
+
+# ttbar
+./xAODAnaHelpers/scripts/xAH_run.py --config dijetISR/scripts/config_DAODtoMT.py --files dijetISR/etc/ttbar.JETM8.list --inputList --inputDQ2 --submitDir ${SUFFIX}_ttbar --force --isMC ${PRUN}

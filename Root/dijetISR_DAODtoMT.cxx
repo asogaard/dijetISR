@@ -20,6 +20,8 @@
 ClassImp(dijetISR_DAODtoMT)
 
 dijetISR_DAODtoMT::dijetISR_DAODtoMT() {
+    m_doJets = false;
+    m_doPhotons = false;
     m_fatJetContainerName = "";
     m_jetContainerName = "";
     m_photonContainerName = "";
@@ -41,6 +43,11 @@ EL::StatusCode dijetISR_DAODtoMT::setupJob(EL::Job& job) {
 }
 
 EL::StatusCode dijetISR_DAODtoMT::initialize() {
+    if (!m_doJets && ! m_doPhotons) {
+        std::cout << "Must select at least one of m_doJets or m_doPhotons!" << std::endl;
+        return EL::StatusCode::FAILURE;
+    }
+
     m_event = wk()->xaodEvent();
     m_store = wk()->xaodStore();
 
@@ -52,8 +59,8 @@ EL::StatusCode dijetISR_DAODtoMT::initialize() {
     m_tree->AddEvent(m_eventInfoDetailStr);
     m_tree->AddTrigger(m_trigDetailStr);
     m_tree->AddFatJets(m_fatJetDetailStr, "signal");
-    m_tree->AddJets(m_jetDetailStr);
-    m_tree->AddPhotons(m_photonDetailStr);
+    if (m_doJets) m_tree->AddJets(m_jetDetailStr);
+    if (m_doPhotons) m_tree->AddPhotons(m_photonDetailStr);
 
     return EL::StatusCode::SUCCESS;
 }
@@ -81,18 +88,46 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
 
     // get jets
     const xAOD::JetContainer *jets = 0;
-    RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(jets, m_jetContainerName, m_event, m_store), "");
+    if (m_doJets) RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(jets, m_jetContainerName, m_event, m_store), "");
 
     // get photons
     const xAOD::PhotonContainer *photons = 0;
-    RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(photons, m_photonContainerName, m_event, m_store), "");
+    if (m_doPhotons) RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(photons, m_photonContainerName, m_event, m_store), "");
+
+    // reduction
+    if (m_doJets) {
+        // jets: at least 1 fat jet, leading fat jet pt > 400 GeV, at least 1 small jet not the fat jet, leading small R jet not the fat jet pt > 400 GeV
+        int nfatjets = fatJets->size();
+        if (nfatjets < 1) return EL::StatusCode::SUCCESS;
+        const xAOD::Jet *leadfj = fatJets->at(0);
+        if (leadfj->pt() / 1000. < 400.) return EL::StatusCode::SUCCESS;
+        int njets = 0;
+        const xAOD::Jet *leadj = 0;
+        for (auto j : *jets) {
+            if (j->p4().DeltaR(leadfj->p4()) > 1.) {
+                njets++;
+                if (!leadj) leadj = j;
+            }
+        }
+        if (njets < 1) return EL::StatusCode::SUCCESS;
+        if (leadj->pt() / 1000. < 400.) return EL::StatusCode::SUCCESS;
+    }
+    if (m_doPhotons) {
+        // photons: at least 1 fat jet, at least 1 photon, leading photon pt > 100 GeV
+        int nfatjets = fatJets->size();
+        if (nfatjets < 1) return EL::StatusCode::SUCCESS;
+        int nphotons = photons->size();
+        if (nphotons < 1) return EL::StatusCode::SUCCESS;
+        const xAOD::Photon *p = photons->at(0);
+        if (p->pt() / 1000. < 100.) return EL::StatusCode::SUCCESS;
+    }
 
     // fill tree branches
     m_tree->FillEvent(eventInfo, m_event);
     m_tree->FillTrigger(eventInfo);
     m_tree->FillFatJets(fatJets, "signal");
-    m_tree->FillJets(jets);
-    m_tree->FillPhotons(photons);
+    if (m_doJets) m_tree->FillJets(jets);
+    if (m_doPhotons) m_tree->FillPhotons(photons);
     m_tree->Fill();
 
     return EL::StatusCode::SUCCESS;

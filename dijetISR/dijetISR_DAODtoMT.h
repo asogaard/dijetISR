@@ -15,6 +15,8 @@ class dijetISR_DAODtoMT : public xAH::Algorithm {
         virtual EL::StatusCode execute();
         virtual EL::StatusCode histFinalize();
 
+        bool m_doJets;
+        bool m_doPhotons;
         std::string m_fatJetContainerName;
         std::string m_jetContainerName;
         std::string m_photonContainerName;

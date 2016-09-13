@@ -1,5 +1,5 @@
 #include <dijetISR/dijetISR_DAODtoMT.h>
-#include <dijetISR/dijetISR_Minitree.h>
+#include <dijetISR/dijetISR_MiniTree.h>
 #include <dijetISR/dijetISR_MTtoTT.h>
 
 #ifdef __CINT__
@@ -13,6 +13,6 @@
 
 #ifdef __CINT__
 #pragma link C++ class dijetISR_DAODtoMT+;
-#pragma link C++ class dijetISR_Minitree+;
+#pragma link C++ class dijetISR_MiniTree+;
 #pragma link C++ class dijetISR_MTtoTT+;
 #endif

@@ -4,7 +4,7 @@
 #include <xAODAnaHelpers/Algorithm.h>
 #include <xAODAnaHelpers/tools/ReturnCheck.h>
 
-#include <dijetISR/dijetISR_Minitree.h>
+#include <dijetISR/dijetISR_MiniTree.h>
 
 class dijetISR_DAODtoMT : public xAH::Algorithm {
     public:
@@ -26,7 +26,7 @@ class dijetISR_DAODtoMT : public xAH::Algorithm {
         std::string m_jetDetailStr;
         std::string m_photonDetailStr;
 
-        dijetISR_Minitree *m_tree; //!
+        dijetISR_MiniTree *m_tree; //!
         
         ClassDef(dijetISR_DAODtoMT, 1);
 };

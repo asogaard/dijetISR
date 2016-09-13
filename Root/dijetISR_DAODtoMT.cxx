@@ -36,7 +36,7 @@ EL::StatusCode dijetISR_DAODtoMT::setupJob(EL::Job& job) {
     job.useXAOD();
     xAOD::Init("dijetISR_DAODtoMT").ignore();
 
-    EL::OutputStream outTree("Minitree");
+    EL::OutputStream outTree("MiniTree");
     job.outputAdd(outTree);
 
     return EL::StatusCode::SUCCESS;
@@ -51,14 +51,14 @@ EL::StatusCode dijetISR_DAODtoMT::initialize() {
     m_event = wk()->xaodEvent();
     m_store = wk()->xaodStore();
 
-    TTree *outTree = new TTree("tree", "tree");
-    TFile *treeFile = wk()->getOutputFile("Minitree");
+    TTree *outTree = new TTree("MiniTree", "MiniTree");
+    TFile *treeFile = wk()->getOutputFile("MiniTree");
     outTree->SetDirectory(treeFile);
     
-    m_tree = new dijetISR_Minitree(m_event, outTree, treeFile);
+    m_tree = new dijetISR_MiniTree(m_event, outTree, treeFile);
     m_tree->AddEvent(m_eventInfoDetailStr);
     m_tree->AddTrigger(m_trigDetailStr);
-    m_tree->AddFatJets(m_fatJetDetailStr, "signal");
+    m_tree->AddFatJets(m_fatJetDetailStr);
     if (m_doJets) m_tree->AddJets(m_jetDetailStr);
     if (m_doPhotons) m_tree->AddPhotons(m_photonDetailStr);
 
@@ -125,7 +125,7 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
     // fill tree branches
     m_tree->FillEvent(eventInfo, m_event);
     m_tree->FillTrigger(eventInfo);
-    m_tree->FillFatJets(fatJets, "signal");
+    m_tree->FillFatJets(fatJets);
     if (m_doJets) m_tree->FillJets(jets);
     if (m_doPhotons) m_tree->FillPhotons(photons);
     m_tree->Fill();
@@ -139,7 +139,7 @@ EL::StatusCode dijetISR_DAODtoMT::histFinalize() {
     // copy metadata to output minitree
     TFile *fileMD = wk()->getOutputFile("metadata");
     TH1D *histEventCount = (TH1D*) fileMD->Get("MetaData_EventCount");
-    TFile *treeFile = wk()->getOutputFile("Minitree");
+    TFile *treeFile = wk()->getOutputFile("MiniTree");
     TH1F *thisHistEventCount = (TH1F*) histEventCount->Clone("MetaData");
     thisHistEventCount->SetDirectory(treeFile);
 

@@ -8,9 +8,10 @@ GRLList = [
 ]
 GRLs = ','.join(GRLList)
 
-c.setalg("dijetISR_MTtoTT", { "m_applyGRL"          : True,
+c.setalg("dijetISR_MTtoTT", { "m_doJets"            : True,
+                              "m_doPhotons"         : False,
+                              "m_applyGRL"          : True,
                               "m_GRLs"              : GRLs,
-                              "m_applyTrigger"      : False,
                               "m_doPRW"             : False,
                               "m_lumiCalcFiles"     : "",
                               "m_PRWFiles"          : "",

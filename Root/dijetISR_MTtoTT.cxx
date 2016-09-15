@@ -18,9 +18,10 @@ ClassImp(dijetISR_MTtoTT)
 
 dijetISR_MTtoTT::dijetISR_MTtoTT() {
     // options
+    m_doJets = false;
+    m_doJets = false;
     m_applyGRL = false;
     m_GRLs = "";
-    m_applyTrigger = false;
     m_doPRW = false;
     m_lumiCalcFiles = "";
     m_PRWFiles = "";
@@ -41,6 +42,11 @@ dijetISR_MTtoTT::dijetISR_MTtoTT() {
 }
 
 EL::StatusCode dijetISR_MTtoTT::initialize() {
+    if (!m_doJets && !m_doPhotons) {
+        std::cout << "Must select at least one of m_doJets or m_doPhotons!" << std::endl;
+        return EL::StatusCode::SUCCESS;
+    }
+
     // GRL tool
     if (m_applyGRL) {
         m_GRLTool = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
@@ -122,7 +128,7 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         out_D2J = in_D2J->at(0);
         out_C2J = in_C2J->at(0);
         out_tau21J = in_tau21J->at(0);
-        if (b_passPhotonTrigger && in_ngamma > 0) {
+        if (m_doPhotons && b_passPhotonTrigger && in_ngamma > 0) {
             out_category = _gamma;
             out_ptgamma = in_ptgamma->at(0);
             out_etagamma = in_etagamma->at(0);
@@ -133,7 +139,7 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
             out_dPhiJgamma = tlvJ.DeltaPhi(tlvgamma);
             out_dRJgamma = tlvJ.DeltaR(tlvgamma);
         }
-        if (b_passJetTrigger && in_nj > 0) {
+        if (m_doJets && b_passJetTrigger && in_nj > 0) {
             TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
             for (int ij = 0; ij < in_nj; ij++) {
                 TLorentzVector tlvj; tlvj.SetPtEtaPhiE(in_ptj->at(ij), in_etaj->at(ij), in_phij->at(ij), in_Ej->at(ij));
@@ -179,23 +185,27 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("lumiBlock", &in_lumiblock);
     wk()->tree()->SetBranchAddress("weight", &in_weight);
     wk()->tree()->SetBranchAddress("passedTriggers", &in_passedTriggers);
-    wk()->tree()->SetBranchAddress("nfatjetssignal", &in_nJ);
-    wk()->tree()->SetBranchAddress("fatjet_m_signal", &in_mJ);
-    wk()->tree()->SetBranchAddress("fatjet_pt_signal", &in_ptJ);
-    wk()->tree()->SetBranchAddress("fatjet_eta_signal", &in_etaJ);
-    wk()->tree()->SetBranchAddress("fatjet_phi_signal", &in_phiJ);
-    wk()->tree()->SetBranchAddress("fatjet_D2_signal", &in_D2J);
-    wk()->tree()->SetBranchAddress("fatjet_C2_signal", &in_C2J);
-    wk()->tree()->SetBranchAddress("fatjet_tau21_wta_signal", &in_tau21J);
-    wk()->tree()->SetBranchAddress("nph", &in_ngamma);
-    wk()->tree()->SetBranchAddress("ph_pt", &in_ptgamma);
-    wk()->tree()->SetBranchAddress("ph_eta", &in_etagamma);
-    wk()->tree()->SetBranchAddress("ph_phi", &in_phigamma);
-    wk()->tree()->SetBranchAddress("njets", &in_nj);
-    wk()->tree()->SetBranchAddress("jet_E", &in_Ej);
-    wk()->tree()->SetBranchAddress("jet_pt", &in_ptj);
-    wk()->tree()->SetBranchAddress("jet_eta", &in_etaj);
-    wk()->tree()->SetBranchAddress("jet_phi", &in_phij);
+    wk()->tree()->SetBranchAddress("nfatjet", &in_nJ);
+    wk()->tree()->SetBranchAddress("fatjet_m", &in_mJ);
+    wk()->tree()->SetBranchAddress("fatjet_pt", &in_ptJ);
+    wk()->tree()->SetBranchAddress("fatjet_eta", &in_etaJ);
+    wk()->tree()->SetBranchAddress("fatjet_phi", &in_phiJ);
+    wk()->tree()->SetBranchAddress("fatjet_D2", &in_D2J);
+    wk()->tree()->SetBranchAddress("fatjet_C2", &in_C2J);
+    wk()->tree()->SetBranchAddress("fatjet_tau21_wta", &in_tau21J);
+    if (m_doJets) {
+        wk()->tree()->SetBranchAddress("njets", &in_nj);
+        wk()->tree()->SetBranchAddress("jet_E", &in_Ej);
+        wk()->tree()->SetBranchAddress("jet_pt", &in_ptj);
+        wk()->tree()->SetBranchAddress("jet_eta", &in_etaj);
+        wk()->tree()->SetBranchAddress("jet_phi", &in_phij);
+    }
+    if (m_doPhotons) {
+        wk()->tree()->SetBranchAddress("nph", &in_ngamma);
+        wk()->tree()->SetBranchAddress("ph_pt", &in_ptgamma);
+        wk()->tree()->SetBranchAddress("ph_eta", &in_etagamma);
+        wk()->tree()->SetBranchAddress("ph_phi", &in_phigamma);
+    }
 }
 
 void dijetISR_MTtoTT::initializeOutTree() {
@@ -212,18 +222,22 @@ void dijetISR_MTtoTT::initializeOutTree() {
     m_outTree->Branch("D2J", &out_D2J, "D2J/F");
     m_outTree->Branch("C2J", &out_C2J, "C2J/F");
     m_outTree->Branch("tau21J", &out_tau21J, "tau21J/F");
-    m_outTree->Branch("ptgamma", &out_ptgamma, "ptgamma/F");
-    m_outTree->Branch("etagamma", &out_etagamma, "etagamma/F");
-    m_outTree->Branch("phigamma", &out_phigamma, "phigamma/F");
-    m_outTree->Branch("ptj", &out_ptj, "ptj/F");
-    m_outTree->Branch("etaj", &out_etaj, "etaj/F");
-    m_outTree->Branch("phij", &out_phij, "phij/F");
-    m_outTree->Branch("dEtaJgamma", &out_dEtaJgamma, "dEtaJgamma/F");
-    m_outTree->Branch("dPhiJgamma", &out_dPhiJgamma, "dPhiJgamma/F");
-    m_outTree->Branch("dRJgamma", &out_dRJgamma, "dRJgamma/F");
-    m_outTree->Branch("dEtaJj", &out_dEtaJj, "dEtaJj/F");
-    m_outTree->Branch("dPhiJj", &out_dPhiJj, "dPhiJj/F");
-    m_outTree->Branch("dRJj", &out_dRJj, "dRJj/F");
+    if (m_doJets) {
+        m_outTree->Branch("ptj", &out_ptj, "ptj/F");
+        m_outTree->Branch("etaj", &out_etaj, "etaj/F");
+        m_outTree->Branch("phij", &out_phij, "phij/F");
+        m_outTree->Branch("dEtaJj", &out_dEtaJj, "dEtaJj/F");
+        m_outTree->Branch("dPhiJj", &out_dPhiJj, "dPhiJj/F");
+        m_outTree->Branch("dRJj", &out_dRJj, "dRJj/F");
+    }
+    if (m_doPhotons) {
+        m_outTree->Branch("ptgamma", &out_ptgamma, "ptgamma/F");
+        m_outTree->Branch("etagamma", &out_etagamma, "etagamma/F");
+        m_outTree->Branch("phigamma", &out_phigamma, "phigamma/F");
+        m_outTree->Branch("dEtaJgamma", &out_dEtaJgamma, "dEtaJgamma/F");
+        m_outTree->Branch("dPhiJgamma", &out_dPhiJgamma, "dPhiJgamma/F");
+        m_outTree->Branch("dRJgamma", &out_dRJgamma, "dRJgamma/F");
+    }
 
     wk()->addOutput(m_outTree);
 }

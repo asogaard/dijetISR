@@ -34,9 +34,10 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         bool passJetTrigger(int runNumber);
 
         // options
+        bool m_doJets;
+        bool m_doPhotons;
         bool m_applyGRL;
         std::string m_GRLs;
-        bool m_applyTrigger;
         bool m_doPRW;
         std::string m_lumiCalcFiles;
         std::string m_PRWFiles;

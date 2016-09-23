@@ -20,6 +20,7 @@ dijetISR_MTtoTT::dijetISR_MTtoTT() {
     // options
     m_doJets = false;
     m_doJets = false;
+    m_mc = false;
     m_applyGRL = false;
     m_GRLs = "";
     m_doPRW = false;
@@ -37,15 +38,21 @@ dijetISR_MTtoTT::dijetISR_MTtoTT() {
     // output MetaData
     m_metaData = 0;
 
+    // sum of weights
+    m_sumOfWeights = 1.;
+
     // initalize vectors to 0
     initializeVectors();
 }
 
 EL::StatusCode dijetISR_MTtoTT::initialize() {
-    if (!m_doJets && !m_doPhotons) {
-        std::cout << "Must select at least one of m_doJets or m_doPhotons!" << std::endl;
+    if ((!m_doJets && !m_doPhotons) || (m_doJets && m_doPhotons)) {
+        std::cout << "Must select only one of m_doJets or m_doPhotons!" << std::endl;
         return EL::StatusCode::SUCCESS;
     }
+    
+    // get sum of weights
+    if (m_mc && m_applyFinalWeight) setSumOfWeights();
 
     // GRL tool
     if (m_applyGRL) {
@@ -104,7 +111,7 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     // LASER - TODO: put in PRW
     
     // GRL
-    if (!m_isMC && m_applyGRL) {
+    if (!m_mc && m_applyGRL) {
         if (!m_GRLTool->passRunLB(in_runNumber, in_lumiblock)) {
             wk()->skipEvent();
             return EL::StatusCode::SUCCESS;
@@ -113,33 +120,37 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
 
     // trigger & categorization
     int runNumber = 0;
-    if (!m_isMC) runNumber = in_runNumber;
+    if (!m_mc) runNumber = in_runNumber;
     else {} // LASER - TODO: handle random run number for MC
     bool b_passPhotonTrigger = passPhotonTrigger(runNumber);
     bool b_passJetTrigger = passJetTrigger(runNumber);
     if (!b_passPhotonTrigger && !b_passJetTrigger) return EL::StatusCode::SUCCESS;
 
-    if (in_nJ > 0) {
-        out_weight = in_weight;
-        out_mJ = in_mJ->at(0);
-        out_ptJ = in_ptJ->at(0);
-        out_etaJ = in_etaJ->at(0);
-        out_phiJ = in_phiJ->at(0);
-        out_D2J = in_D2J->at(0);
-        out_C2J = in_C2J->at(0);
-        out_tau21J = in_tau21J->at(0);
-        if (m_doPhotons && b_passPhotonTrigger && in_ngamma > 0) {
-            out_category = _gamma;
-            out_ptgamma = in_ptgamma->at(0);
-            out_etagamma = in_etagamma->at(0);
-            out_phigamma = in_phigamma->at(0);
-            TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
-            TLorentzVector tlvgamma; tlvgamma.SetPtEtaPhiM(out_ptgamma, out_etagamma, out_phigamma, 0);
-            out_dEtaJgamma = fabs(tlvJ.Eta() - tlvgamma.Eta());
-            out_dPhiJgamma = tlvJ.DeltaPhi(tlvgamma);
-            out_dRJgamma = tlvJ.DeltaR(tlvgamma);
-        }
-        if (m_doJets && b_passJetTrigger && in_nj > 0) {
+    // fit weight
+    float weight = in_weight;
+    if (m_mc && m_applyFinalWeight) weight = weight / m_sumOfWeights;
+    out_weight = weight;
+
+    // jet selection
+    if (m_doJets && b_passJetTrigger && in_nJ > 0) {
+        int iJ = 0;
+        // more than one fat jet - grab the two highest pt and take the one with the larger mass
+        if (in_nJ > 1) iJ = (in_mJ->at(0) > in_mJ->at(1)) ? 0 : 1;
+        /* 
+        // more than one fat jet - grab the two highest pt and take the one with the smaller D2
+        if (in_nJ > 1) iJ = (in_D2J->at(0) < in_D2J->at(1)) ? 0 : 1;
+        */
+        out_mJ = in_mJ->at(iJ);
+        out_ptJ = in_ptJ->at(iJ);
+        out_etaJ = in_etaJ->at(iJ);
+        out_phiJ = in_phiJ->at(iJ);
+        out_D2J = in_D2J->at(iJ);
+        out_C2J = in_C2J->at(iJ);
+        out_tau21J = in_tau21J->at(iJ);
+        
+        // small-R jet selection
+        if (in_nJ > 0) {
+            // dPhi check (make sure we don't use the same jet for both large-R and small-R!)
             TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
             for (int ij = 0; ij < in_nj; ij++) {
                 TLorentzVector tlvj; tlvj.SetPtEtaPhiE(in_ptj->at(ij), in_etaj->at(ij), in_phij->at(ij), in_Ej->at(ij));
@@ -155,6 +166,36 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
                 }
             }
         }
+
+        // fill tree
+        m_outTree->Fill();
+    }
+
+    // photon selection
+    if (m_doPhotons && b_passPhotonTrigger && in_nJ > 0) {
+        // leading fat jet
+        out_mJ = in_mJ->at(0);
+        out_ptJ = in_ptJ->at(0);
+        out_etaJ = in_etaJ->at(0);
+        out_phiJ = in_phiJ->at(0);
+        out_D2J = in_D2J->at(0);
+        out_C2J = in_C2J->at(0);
+        out_tau21J = in_tau21J->at(0);
+
+        // photon
+        if (in_ngamma > 0) {
+            out_category = _gamma;
+            out_ptgamma = in_ptgamma->at(0);
+            out_etagamma = in_etagamma->at(0);
+            out_phigamma = in_phigamma->at(0);
+            TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
+            TLorentzVector tlvgamma; tlvgamma.SetPtEtaPhiM(out_ptgamma, out_etagamma, out_phigamma, 0);
+            out_dEtaJgamma = fabs(tlvJ.Eta() - tlvgamma.Eta());
+            out_dPhiJgamma = tlvJ.DeltaPhi(tlvgamma);
+            out_dRJgamma = tlvJ.DeltaR(tlvgamma);
+        }
+        
+        // fill tree
         m_outTree->Fill();
     }
 
@@ -250,6 +291,11 @@ void dijetISR_MTtoTT::copyMetaData() {
 
     TH1F *md = (TH1F*) wk()->inputFile()->Get("MetaData");
     m_metaData->Fill(1, md->GetBinContent(3));
+}
+
+void dijetISR_MTtoTT::setSumOfWeights() {
+    TH1F *md = (TH1F*) wk()->inputFile()->Get("MetaData");
+    m_sumOfWeights = md->GetBinContent(3);
 }
 
 void dijetISR_MTtoTT::resetBranches() {

@@ -28,6 +28,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         void initializeInTree();
         void initializeOutTree();
         void copyMetaData();
+        void setSumOfWeights();
 
         void resetBranches();
         bool passPhotonTrigger(int runNumber);
@@ -36,6 +37,8 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         // options
         bool m_doJets;
         bool m_doPhotons;
+        bool m_mc;
+        bool m_applyFinalWeight;
         bool m_applyGRL;
         std::string m_GRLs;
         bool m_doPRW;
@@ -99,6 +102,9 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
 
         // MetaData
         TH1F *m_metaData; //!
+
+        // sum of weights
+        float m_sumOfWeights; //!
 
         ClassDef(dijetISR_MTtoTT, 1);
 };

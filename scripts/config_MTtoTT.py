@@ -10,6 +10,8 @@ GRLs = ','.join(GRLList)
 
 c.setalg("dijetISR_MTtoTT", { "m_doJets"            : True,
                               "m_doPhotons"         : False,
+                              "m_mc"                : args.is_MC,
+                              "m_applyFinalWeight"  : True,
                               "m_applyGRL"          : True,
                               "m_GRLs"              : GRLs,
                               "m_doPRW"             : False,

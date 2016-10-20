@@ -38,6 +38,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         bool m_doJets;
         bool m_doPhotons;
         bool m_mc;
+        float m_lumi;
         bool m_applyFinalWeight;
         bool m_applyGRL;
         std::string m_GRLs;
@@ -90,6 +91,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         float out_ptgamma; //!
         float out_etagamma; //!
         float out_phigamma; //!
+        float out_mj; //!
         float out_ptj; //!
         float out_etaj; //!
         float out_phij; //1

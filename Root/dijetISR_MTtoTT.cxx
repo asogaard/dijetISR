@@ -21,6 +21,7 @@ dijetISR_MTtoTT::dijetISR_MTtoTT() {
     m_doJets = false;
     m_doJets = false;
     m_mc = false;
+    m_lumi = -1.;
     m_applyGRL = false;
     m_GRLs = "";
     m_doPRW = false;
@@ -113,7 +114,6 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     // GRL
     if (!m_mc && m_applyGRL) {
         if (!m_GRLTool->passRunLB(in_runNumber, in_lumiblock)) {
-            wk()->skipEvent();
             return EL::StatusCode::SUCCESS;
         } 
     }
@@ -121,25 +121,35 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     // trigger & categorization
     int runNumber = 0;
     if (!m_mc) runNumber = in_runNumber;
-    else {} // LASER - TODO: handle random run number for MC
+    else runNumber = 900000; // LASER - TODO: handle random run number for MC, for now enforce highest triggers
     bool b_passPhotonTrigger = passPhotonTrigger(runNumber);
     bool b_passJetTrigger = passJetTrigger(runNumber);
     if (!b_passPhotonTrigger && !b_passJetTrigger) return EL::StatusCode::SUCCESS;
 
-    // fit weight
-    float weight = in_weight;
-    if (m_mc && m_applyFinalWeight) weight = weight / m_sumOfWeights;
+    // get weight
+    float weight = m_mc ? in_weight : 1.;
+    if (m_mc && m_applyFinalWeight) weight /= m_sumOfWeights;
+    if (m_mc && m_lumi != -1.) weight *= m_lumi;
     out_weight = weight;
 
     // jet selection
     if (m_doJets && b_passJetTrigger && in_nJ > 0) {
         int iJ = 0;
+
+        // J selection
+        /* 
         // more than one fat jet - grab the two highest pt and take the one with the larger mass
         if (in_nJ > 1) iJ = (in_mJ->at(0) > in_mJ->at(1)) ? 0 : 1;
-        /* 
+        //
+        */
         // more than one fat jet - grab the two highest pt and take the one with the smaller D2
         if (in_nJ > 1) iJ = (in_D2J->at(0) < in_D2J->at(1)) ? 0 : 1;
-        */
+        //
+
+        // J pt > 450
+        if (!(in_ptJ->at(iJ) > 450.)) goto postj;
+
+        // J information
         out_mJ = in_mJ->at(iJ);
         out_ptJ = in_ptJ->at(iJ);
         out_etaJ = in_etaJ->at(iJ);
@@ -148,28 +158,38 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         out_C2J = in_C2J->at(iJ);
         out_tau21J = in_tau21J->at(iJ);
         
-        // small-R jet selection
-        if (in_nJ > 0) {
+        // j selection
+        if (in_nj > 0) {
             // dPhi check (make sure we don't use the same jet for both large-R and small-R!)
             TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
             for (int ij = 0; ij < in_nj; ij++) {
                 TLorentzVector tlvj; tlvj.SetPtEtaPhiE(in_ptj->at(ij), in_etaj->at(ij), in_phij->at(ij), in_Ej->at(ij));
                 if (fabs(tlvJ.DeltaPhi(tlvj)) > TMath::Pi() / 2.) {
-                    out_category = _jet;
+                    // j pt > 450
+                    if (!(in_ptj->at(ij) > 450.)) goto postj;
+
+                    // j information
+                    out_mj = tlvj.M();
                     out_ptj = in_ptj->at(ij);
                     out_etaj = in_etaj->at(ij);
                     out_phij = in_phij->at(ij);
                     out_dEtaJj = fabs(tlvJ.Eta() - tlvj.Eta());
                     out_dPhiJj = tlvJ.DeltaPhi(tlvj);
                     out_dRJj = tlvJ.DeltaR(tlvj);
+
+                    // got the information we need
                     break;
                 }
             }
         }
+        else goto postj;
 
         // fill tree
+        out_category = _jet;
         m_outTree->Fill();
     }
+
+postj: ;
 
     // photon selection
     if (m_doPhotons && b_passPhotonTrigger && in_nJ > 0) {
@@ -198,6 +218,8 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         // fill tree
         m_outTree->Fill();
     }
+
+postgamma: ;
 
     return EL::StatusCode::SUCCESS;
 }
@@ -264,6 +286,7 @@ void dijetISR_MTtoTT::initializeOutTree() {
     m_outTree->Branch("C2J", &out_C2J, "C2J/F");
     m_outTree->Branch("tau21J", &out_tau21J, "tau21J/F");
     if (m_doJets) {
+        m_outTree->Branch("mj", &out_mj, "mj/F");
         m_outTree->Branch("ptj", &out_ptj, "ptj/F");
         m_outTree->Branch("etaj", &out_etaj, "etaj/F");
         m_outTree->Branch("phij", &out_phij, "phij/F");
@@ -313,6 +336,7 @@ void dijetISR_MTtoTT::resetBranches() {
         out_ptgamma = -999;
         out_etagamma = -999;
         out_phigamma = -999;
+        out_mj = -999;
         out_ptj = -999;
         out_etaj = -999;
         out_phij = -999;

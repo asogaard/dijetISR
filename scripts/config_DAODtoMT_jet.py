@@ -17,12 +17,12 @@ triggersList = [
 ]
 triggers = ",".join(triggersList)
 
+deriv = 'JETM6Kernel'
+
 if args.is_MC:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC'
-    deriv = 'JETM8Kernel'
 else:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC_Insitu'
-    deriv = 'JETM6Kernel'
 
 c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelection",
                                   "m_debug"                 : False,
@@ -72,7 +72,7 @@ c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
                           "m_decorateSelectedObjects" : False,
                           "m_createSelectedContainer" : True,  
                           "m_cleanJets"               : False,
-                          "m_pT_min"                  : 100e3,
+                          "m_pT_min"                  : 200e3,
                           "m_eta_max"                 : 2.0,
                           "m_mass_min"                : 0.1, 
                           "m_useCutFlow"              : True,

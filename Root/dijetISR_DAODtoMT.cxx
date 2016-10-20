@@ -43,8 +43,8 @@ EL::StatusCode dijetISR_DAODtoMT::setupJob(EL::Job& job) {
 }
 
 EL::StatusCode dijetISR_DAODtoMT::initialize() {
-    if (!m_doJets && ! m_doPhotons) {
-        std::cout << "Must select at least one of m_doJets or m_doPhotons!" << std::endl;
+    if ((!m_doJets && ! m_doPhotons) || (m_doJets && m_doPhotons)) {
+        std::cout << "Must select only one of m_doJets or m_doPhotons!" << std::endl;
         return EL::StatusCode::FAILURE;
     }
 
@@ -96,30 +96,82 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
 
     // reduction
     if (m_doJets) {
-        // jets: at least 1 fat jet, leading fat jet pt > 400 GeV, at least 1 small jet not the fat jet, leading small R jet not the fat jet pt > 400 GeV
+        bool b1 = false, b2 = false;
         int nfatjets = fatJets->size();
-        if (nfatjets < 1) return EL::StatusCode::SUCCESS;
-        const xAOD::Jet *leadfj = fatJets->at(0);
-        if (leadfj->pt() / 1000. < 400.) return EL::StatusCode::SUCCESS;
-        int njets = 0;
-        const xAOD::Jet *leadj = 0;
-        for (auto j : *jets) {
-            if (j->p4().DeltaR(leadfj->p4()) > 1.) {
-                njets++;
-                if (!leadj) leadj = j;
+        
+        // case 1: leading fat jet is resonance
+        // leading fat jet pt > 400 GeV, at least 1 small jet not the fat jet, leading small R jet not the fat jet pt > 400 GeV
+        if (nfatjets > 0) {
+            const xAOD::Jet *res = fatJets->at(0);
+            const xAOD::Jet *isr = 0;
+            for (auto j : *jets) {
+                if (j->p4().DeltaR(res->p4()) > 1.) {
+                    isr = j;
+                    break;
+                }
+            }
+            if (isr) {
+                if (res->pt() / 1000. > 400. && isr->pt() / 1000. > 400.) b1 = true;
             }
         }
-        if (njets < 1) return EL::StatusCode::SUCCESS;
-        if (leadj->pt() / 1000. < 400.) return EL::StatusCode::SUCCESS;
+
+        // case 2: subleading fat jet is resonance
+        // NOT case1, subleading fat jet pt > 400 GeV, at least 1 small jet not the fat jet, leading small R jet not the fat jet pt > 400 GeV
+        if (!b1 && nfatjets > 1) {
+            const xAOD::Jet *res = fatJets->at(1);
+            const xAOD::Jet *isr = 0;
+            for (auto j : *jets) {
+                if (j->p4().DeltaR(res->p4()) > 1.) {
+                    isr = j;
+                    break;
+                }
+            }
+            if (isr) {
+                if (res->pt() / 1000. > 400. && isr->pt() / 1000. > 400.) b2 = true;
+            }
+        }
+
+        // check cases
+        if (!b1 && !b2) return EL::StatusCode::SUCCESS;
     }
     if (m_doPhotons) {
-        // photons: at least 1 fat jet, at least 1 photon, leading photon pt > 100 GeV
+        bool b1 = false, b2 = false;
         int nfatjets = fatJets->size();
-        if (nfatjets < 1) return EL::StatusCode::SUCCESS;
-        int nphotons = photons->size();
-        if (nphotons < 1) return EL::StatusCode::SUCCESS;
-        const xAOD::Photon *p = photons->at(0);
-        if (p->pt() / 1000. < 100.) return EL::StatusCode::SUCCESS;
+        
+        // case 1: leading fat jet is resonance
+        // leading fat jet pt > 400 GeV, at least 1 photon not the fat jet, leading photon not the fat jet pt > 100 GeV
+        if (nfatjets > 0) {
+            const xAOD::Jet *res = fatJets->at(0);
+            const xAOD::Photon *isr = 0;
+            for (auto p : *photons) {
+                if (p->p4().DeltaR(res->p4()) > 1.) {
+                    isr = p;
+                    break;
+                }
+            }
+            if (isr) {
+                if (res->pt() / 1000. > 400. && isr->pt() / 1000. > 100.) b1 = true;
+            }
+        }
+
+        // case 2: subleading fat jet is resonance
+        // NOT case1, subleading fat jet pt > 400 GeV, at least 1 photon not the fat jet, leading photon not the fat jet pt > 100 GeV
+        if (!b1 && nfatjets > 1) {
+            const xAOD::Jet *res = fatJets->at(1);
+            const xAOD::Photon *isr = 0;
+            for (auto p : *photons) {
+                if (p->p4().DeltaR(res->p4()) > 1.) {
+                    isr = p;
+                    break;
+                }
+            }
+            if (isr) {
+                if (res->pt() / 1000. > 400. && isr->pt() / 1000. > 100.) b2 = true;
+            }
+        }
+
+        // check cases
+        if (!b1 && !b2) return EL::StatusCode::SUCCESS;
     }
 
     // fill tree branches

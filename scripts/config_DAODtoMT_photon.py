@@ -10,10 +10,7 @@ triggersList = [
 ]
 triggers = ",".join(triggersList)
 
-if args.is_MC:
-    deriv = 'JETM8Kernel'
-else:
-    deriv = 'JETM6Kernel'
+deriv = 'JETM6Kernel'
 
 c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelection",
                                   "m_debug"                 : False,
@@ -63,7 +60,7 @@ c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
                           "m_decorateSelectedObjects" : False,
                           "m_createSelectedContainer" : True,  
                           "m_cleanJets"               : False,
-                          "m_pT_min"                  : 100e3,
+                          "m_pT_min"                  : 200e3,
                           "m_eta_max"                 : 2.0,
                           "m_mass_min"                : 0.1, 
                           "m_useCutFlow"              : True,

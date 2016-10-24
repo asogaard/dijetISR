@@ -127,7 +127,7 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     // reset out tree branches
     resetBranches();
         
-    out_runNumber = in_runNumber;
+    out_runNumber = (m_mc) ? in_mcChannelNumber : in_runNumber;
     out_eventNumber = in_eventNumber;
 
     // LASER - TODO: put in PRW

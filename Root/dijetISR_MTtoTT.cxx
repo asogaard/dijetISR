@@ -22,6 +22,8 @@ dijetISR_MTtoTT::dijetISR_MTtoTT() {
     m_doJets = false;
     m_mc = false;
     m_lumi = -1.;
+    m_applyFinalWeight = false;
+    m_applyXSFix = false;
     m_applyGRL = false;
     m_GRLs = "";
     m_doPRW = false;
@@ -41,6 +43,9 @@ dijetISR_MTtoTT::dijetISR_MTtoTT() {
 
     // sum of weights
     m_sumOfWeights = 1.;
+
+    // map of XS
+    m_crossSections.clear();
 
     // initalize vectors to 0
     initializeVectors();
@@ -87,6 +92,22 @@ EL::StatusCode dijetISR_MTtoTT::initialize() {
         RETURN_CHECK("dojetISR_MTtoTT::initialize()", m_PRWTool->initialize(), "");
     }
 
+    // XS fix for samples with no meta data XS
+    if (m_mc && m_applyXSFix) {
+        std::fstream f(gSystem->ExpandPathName("$ROOTCOREBIN/data/dijetISR/additional_XS.txt"));
+        if (!f.good()) return EL::StatusCode::FAILURE;
+        std::string line;
+        while (std::getline(f, line)) {
+            if (line.length() != 0 && line.find("#") != 0) {
+                std::stringstream s(line);
+                int runNumber;
+                float XS, filterEff, kfactor, totalXS;
+                s >> runNumber >> XS >> filterEff >> kfactor >> totalXS;
+                m_crossSections.insert(std::pair<int, float>(runNumber, totalXS));
+            }
+        }
+    }
+
     return EL::StatusCode::SUCCESS;
 }
 
@@ -130,6 +151,14 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     float weight = m_mc ? in_weight : 1.;
     if (m_mc && m_applyFinalWeight) weight /= m_sumOfWeights;
     if (m_mc && m_lumi != -1.) weight *= m_lumi;
+    if (m_mc && m_applyXSFix) {
+        for (auto s : m_crossSections) {
+            if (in_mcChannelNumber == s.first) {
+                weight *= s.second;
+                break;
+            }
+        }
+    }
     out_weight = weight;
 
     // jet selection
@@ -244,6 +273,7 @@ void dijetISR_MTtoTT::initializeVectors() {
 
 void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("runNumber", &in_runNumber);
+    wk()->tree()->SetBranchAddress("mcChannelNumber", &in_mcChannelNumber);
     wk()->tree()->SetBranchAddress("eventNumber", &in_eventNumber);
     wk()->tree()->SetBranchAddress("lumiBlock", &in_lumiblock);
     wk()->tree()->SetBranchAddress("weight", &in_weight);

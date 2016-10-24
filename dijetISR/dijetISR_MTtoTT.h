@@ -40,6 +40,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         bool m_mc;
         float m_lumi;
         bool m_applyFinalWeight;
+        bool m_applyXSFix;
         bool m_applyGRL;
         std::string m_GRLs;
         bool m_doPRW;
@@ -53,6 +54,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
 
         // input tree branches
         int in_runNumber; //! 
+        int in_mcChannelNumber; //!
         long long in_eventNumber; //!
         int in_lumiblock; //!
         float in_weight; //!
@@ -107,6 +109,9 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
 
         // sum of weights
         float m_sumOfWeights; //!
+
+        // map of XS
+        std::map<int, float> m_crossSections; //!
 
         ClassDef(dijetISR_MTtoTT, 1);
 };

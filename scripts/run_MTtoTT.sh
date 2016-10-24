@@ -1,5 +1,17 @@
 #!/bin/bash
 
+function stop_xAH {
+    echo "Violently exiting!"
+    ps x | grep xAH_run | while read line
+    do
+        set $line
+        kill -9 $1
+    done
+    exit
+}
+
+trap stop_xAH SIGINT
+
 if [ -z $1 ]
 then
     echo "Output dir required!"
@@ -7,7 +19,7 @@ then
 fi
 
 OUTDIR=$1
-DATAPATH="eos/atlas/unpledged/group-wisc/users/lkaplan/dijetISR/prod_jet_20160913"
+DATAPATH="eos/atlas/unpledged/group-wisc/users/lkaplan/dijetISR/prod_jet_20161020"
 
 if [ -d $OUTDIR ]
 then

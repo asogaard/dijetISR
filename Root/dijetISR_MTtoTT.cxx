@@ -179,7 +179,8 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         if (!(in_ptJ->at(iJ) > 450.)) goto postj;
 
         // J information
-        out_mJ = in_mJ->at(iJ);
+        TLorentzVector tlvJ; tlvJ.SetPtEtaPhiE(in_ptJ->at(iJ), in_etaJ->at(iJ), in_phiJ->at(iJ), in_EJ->at(iJ));
+        out_mJ = tlvJ.M();
         out_ptJ = in_ptJ->at(iJ);
         out_etaJ = in_etaJ->at(iJ);
         out_phiJ = in_phiJ->at(iJ);
@@ -190,7 +191,6 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         // j selection
         if (in_nj > 0) {
             // dPhi check (make sure we don't use the same jet for both large-R and small-R!)
-            TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
             for (int ij = 0; ij < in_nj; ij++) {
                 TLorentzVector tlvj; tlvj.SetPtEtaPhiE(in_ptj->at(ij), in_etaj->at(ij), in_phij->at(ij), in_Ej->at(ij));
                 if (fabs(tlvJ.DeltaPhi(tlvj)) > TMath::Pi() / 2.) {
@@ -223,7 +223,8 @@ postj: ;
     // photon selection
     if (m_doPhotons && b_passPhotonTrigger && in_nJ > 0) {
         // leading fat jet
-        out_mJ = in_mJ->at(0);
+        TLorentzVector tlvJ; tlvJ.SetPtEtaPhiE(in_ptJ->at(0), in_etaJ->at(0), in_phiJ->at(0), in_EJ->at(0));
+        out_mJ = tlvJ.M();
         out_ptJ = in_ptJ->at(0);
         out_etaJ = in_etaJ->at(0);
         out_phiJ = in_phiJ->at(0);
@@ -237,7 +238,6 @@ postj: ;
             out_ptgamma = in_ptgamma->at(0);
             out_etagamma = in_etagamma->at(0);
             out_phigamma = in_phigamma->at(0);
-            TLorentzVector tlvJ; tlvJ.SetPtEtaPhiM(out_ptJ, out_etaJ, out_phiJ, out_mJ);
             TLorentzVector tlvgamma; tlvgamma.SetPtEtaPhiM(out_ptgamma, out_etagamma, out_phigamma, 0);
             out_dEtaJgamma = fabs(tlvJ.Eta() - tlvgamma.Eta());
             out_dPhiJgamma = tlvJ.DeltaPhi(tlvgamma);
@@ -255,7 +255,7 @@ postgamma: ;
 
 void dijetISR_MTtoTT::initializeVectors() {
     in_passedTriggers = 0;
-    in_mJ = 0;
+    in_EJ = 0;
     in_ptJ = 0;
     in_etaJ = 0;
     in_phiJ = 0;
@@ -279,7 +279,7 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("weight", &in_weight);
     wk()->tree()->SetBranchAddress("passedTriggers", &in_passedTriggers);
     wk()->tree()->SetBranchAddress("nfatjet", &in_nJ);
-    wk()->tree()->SetBranchAddress("fatjet_m", &in_mJ);
+    wk()->tree()->SetBranchAddress("fatjet_E", &in_EJ);
     wk()->tree()->SetBranchAddress("fatjet_pt", &in_ptJ);
     wk()->tree()->SetBranchAddress("fatjet_eta", &in_etaJ);
     wk()->tree()->SetBranchAddress("fatjet_phi", &in_phiJ);

@@ -60,7 +60,7 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         float in_weight; //!
         std::vector<std::string> *in_passedTriggers; //!
         int in_nJ; //!
-        std::vector<float> *in_mJ; //!
+        std::vector<float> *in_EJ; //!
         std::vector<float> *in_ptJ; //!
         std::vector<float> *in_etaJ; //!
         std::vector<float> *in_phiJ; //!

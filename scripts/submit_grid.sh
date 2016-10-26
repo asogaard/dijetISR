@@ -30,7 +30,7 @@ fi
 ./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/data16.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_data16 --force        ${PRUN}
 
 # jetjet
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/jetjet.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_jetjet --force --isMC ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/jetjet.Sherpa.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_jetjet --force --isMC ${PRUN}
 
 # WHad
 ./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/WHad.JETM6.list   --inputList --inputDQ2 --submitDir ${SUFFIX}_WHad   --force --isMC ${PRUN}

@@ -126,6 +126,6 @@ c.setalg("dijetISR_DAODtoMT", { "m_doJets"               : True,
                                 "m_jetContainerName"     : "SelJets",
                                 "m_eventInfoDetailStr"   : "pileup",
                                 "m_trigDetailStr"        : "passTriggers",
-                                "m_fatJetDetailStr"      : "kinematic substructure",
+                                "m_fatJetDetailStr"      : "kinematic substructure constituentAll",
                                 "m_jetDetailStr"         : "kinematic",
                               } )

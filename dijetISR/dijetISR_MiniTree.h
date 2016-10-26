@@ -8,14 +8,18 @@
 class dijetISR_MiniTree : public HelpTreeBase {
     private:
         float m_weight;
+        std::vector<float> m_fatjet_pt_ungroomed;
 
     public:
         dijetISR_MiniTree(xAOD::TEvent *event, TTree *tree, TFile *file);
         ~dijetISR_MiniTree();
 
         void AddEventUser(const std::string detailStr = "");
+        void AddFatJetsUser(const std::string &, const std::string &, const std::string &);
         void FillEventUser(const xAOD::EventInfo *eventInfo);
+        void FillFatJetsUser(const xAOD::Jet *fatjet, const std::string &, const std::string &);
         void ClearEventUser();
+        void ClearFatJetsUser(const std::string &, const std::string &);
 };
 
 #endif

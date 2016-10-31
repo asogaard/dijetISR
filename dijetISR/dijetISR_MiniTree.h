@@ -9,6 +9,7 @@ class dijetISR_MiniTree : public HelpTreeBase {
     private:
         float m_weight;
         std::vector<float> m_fatjet_pt_ungroomed;
+        std::vector<float> m_fatjet_tau21_wta_ungroomed;
 
     public:
         dijetISR_MiniTree(xAOD::TEvent *event, TTree *tree, TFile *file);

@@ -17,7 +17,17 @@ triggersList = [
 ]
 triggers = ",".join(triggersList)
 
-deriv = 'JETM6Kernel'
+deriv = ''
+if args.use_inputFileList:
+    inputstring = str.split((args.input_filename)[0], ".")
+    deriv = inputstring[-2]
+    deriv += "Kernel"
+    if ("JETM" not in deriv and "EXOT" not in deriv):
+        raise Exception("Invalid file list name!  Must be of form <name>.<derivation>.list")
+else:
+    deriv = 'EXOT188Kernel'
+
+print(deriv)
 
 if args.is_MC:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC'
@@ -126,6 +136,6 @@ c.setalg("dijetISR_DAODtoMT", { "m_doJets"               : True,
                                 "m_jetContainerName"     : "SelJets",
                                 "m_eventInfoDetailStr"   : "pileup",
                                 "m_trigDetailStr"        : "passTriggers",
-                                "m_fatJetDetailStr"      : "kinematic substructure constituentAll",
+                                "m_fatJetDetailStr"      : "kinematic substructure",
                                 "m_jetDetailStr"         : "kinematic",
                               } )

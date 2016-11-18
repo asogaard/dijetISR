@@ -165,15 +165,37 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
     if (m_doJets && b_passJetTrigger && in_nJ > 0) {
         int iJ = 0;
 
-        // J selection
-        /* 
-        // more than one fat jet - grab the two highest pt and take the one with the larger mass
-        if (in_nJ > 1) iJ = (in_mJ->at(0) > in_mJ->at(1)) ? 0 : 1;
-        //
+        // J selection - leave all uncommented for highestPt
+        
+        /*
+        // grab the two highest pt and take the one with the larger mass
+        if (in_nJ > 1) {
+            TLorentzVector tlvJ0; tlvJ0.SetPtEtaPhiE(in_ptJ->at(0), in_etaJ->at(0), in_phiJ->at(0), in_EJ->at(0));
+            TLorentzVector tlvJ1; tlvJ1.SetPtEtaPhiE(in_ptJ->at(1), in_etaJ->at(1), in_phiJ->at(1), in_EJ->at(1));
+            iJ = (tlvJ0.M() > tlvJ1.M()) ? 0 : 1;
+        }
         */
-        // more than one fat jet - grab the two highest pt and take the one with the smaller D2
+
+        /*
+        // grab the two highest pt and take the one with the smaller D2
         if (in_nJ > 1) iJ = (in_D2J->at(0) < in_D2J->at(1)) ? 0 : 1;
-        //
+        */
+
+        /*
+        // grab the two highest pt and take the one with the smaller tau21
+        if (in_nJ > 1) iJ = (in_tau21J->at(0) < in_tau21J->at(1)) ? 0 : 1;
+        */
+
+        // grab the two highest pt and take the one with smaller tau21DDT
+        if (in_nJ > 1) {
+            TLorentzVector tlvJ0; tlvJ0.SetPtEtaPhiE(in_ptJ->at(0), in_etaJ->at(0), in_phiJ->at(0), in_EJ->at(0));
+            TLorentzVector tlvJ1; tlvJ1.SetPtEtaPhiE(in_ptJ->at(1), in_etaJ->at(1), in_phiJ->at(1), in_EJ->at(1));
+            float rho0 = log(pow(tlvJ0.M(), 2) / tlvJ0.Pt());
+            float rho1 = log(pow(tlvJ1.M(), 2) / tlvJ1.Pt());
+            float ddt0 = in_tau21J->at(0) + 0.096605 * (rho0 - 1.5);
+            float ddt1 = in_tau21J->at(1) + 0.096605 * (rho1 - 1.5);
+            iJ = (ddt0 < ddt1) ? 0 : 1;
+        }
 
         // J pt > 450
         if (!(in_ptJ->at(iJ) > 450.)) goto postj;
@@ -187,6 +209,35 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         out_D2J = in_D2J->at(iJ);
         out_C2J = in_C2J->at(iJ);
         out_tau21J = in_tau21J->at(iJ);
+        out_ptJ_ungroomed = in_ptJ_ungroomed->at(iJ);
+        out_tau21J_ungroomed = in_tau21J_ungroomed->at(iJ);
+
+        // explicit rho cut
+        float rho = log(pow(tlvJ.M(), 2) / tlvJ.Pt());
+        if (rho < 1.5 || rho > 5.) goto postj;
+        float ddt = in_tau21J->at(iJ) + 0.096605 * (rho - 1.5);
+        out_tau21JDDT = ddt;
+
+        // constituent information
+        /*
+        if ((*in_constituentsJ_pt)[iJ].size() >= 2) {
+            std::vector<TLorentzVector> tlvs;
+            for (int i = 0; i < (*in_constituentsJ_pt)[iJ].size(); i++) {
+                TLorentzVector tlv;
+                tlv.SetPtEtaPhiE((*in_constituentsJ_pt)[iJ][i], (*in_constituentsJ_eta)[iJ][i], (*in_constituentsJ_phi)[iJ][i], (*in_constituentsJ_E)[iJ][i]);
+                tlvs.push_back(tlv);
+            }
+            std::sort(tlvs.begin(), tlvs.end(), [] (TLorentzVector a, TLorentzVector b) -> bool {return (a.Pt() > b.Pt());});
+            out_constituentsJ_pt0 = tlvs[0].Pt();
+            out_constituentsJ_eta0 = tlvs[0].Eta();
+            out_constituentsJ_phi0 = tlvs[0].Phi();
+            out_constituentsJ_E0 = tlvs[0].E();
+            out_constituentsJ_pt1 = tlvs[1].Pt();
+            out_constituentsJ_eta1 = tlvs[1].Eta();
+            out_constituentsJ_phi1 = tlvs[1].Phi();
+            out_constituentsJ_E1 = tlvs[1].E();
+        }
+        */
         
         // j selection
         if (in_nj > 0) {
@@ -262,6 +313,12 @@ void dijetISR_MTtoTT::initializeVectors() {
     in_D2J = 0;
     in_C2J = 0;
     in_tau21J = 0;
+    in_ptJ_ungroomed = 0;
+    in_tau21J_ungroomed = 0;
+    //in_constituentsJ_pt = 0;
+    //in_constituentsJ_eta = 0;
+    //in_constituentsJ_phi = 0;
+    //in_constituentsJ_E = 0;
     in_ptgamma = 0;
     in_etagamma = 0;
     in_phigamma = 0;
@@ -286,6 +343,12 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("fatjet_D2", &in_D2J);
     wk()->tree()->SetBranchAddress("fatjet_C2", &in_C2J);
     wk()->tree()->SetBranchAddress("fatjet_tau21_wta", &in_tau21J);
+    wk()->tree()->SetBranchAddress("fatjet_pt_ungroomed", &in_ptJ_ungroomed);
+    wk()->tree()->SetBranchAddress("fatjet_tau21_wta_ungroomed", &in_tau21J_ungroomed);
+    //wk()->tree()->SetBranchAddress("fatjet_constituent_pt", &in_constituentsJ_pt);
+    //wk()->tree()->SetBranchAddress("fatjet_constituent_eta", &in_constituentsJ_eta);
+    //wk()->tree()->SetBranchAddress("fatjet_constituent_phi", &in_constituentsJ_phi);
+    //wk()->tree()->SetBranchAddress("fatjet_constituent_e", &in_constituentsJ_E);
     if (m_doJets) {
         wk()->tree()->SetBranchAddress("njets", &in_nj);
         wk()->tree()->SetBranchAddress("jet_E", &in_Ej);
@@ -315,6 +378,17 @@ void dijetISR_MTtoTT::initializeOutTree() {
     m_outTree->Branch("D2J", &out_D2J, "D2J/F");
     m_outTree->Branch("C2J", &out_C2J, "C2J/F");
     m_outTree->Branch("tau21J", &out_tau21J, "tau21J/F");
+    m_outTree->Branch("ptJ_ungroomed", &out_ptJ_ungroomed, "ptJ_ungroomed/F");
+    m_outTree->Branch("tau21J_ungroomed", &out_tau21J_ungroomed, "tau21J_ungroomed/F");
+    m_outTree->Branch("tau21JDDT", &out_tau21JDDT, "tau21JDDT/F");
+    //m_outTree->Branch("constituentsJ_pt0", &out_constituentsJ_pt0, "constituentsJ_pt0/F");
+    //m_outTree->Branch("constituentsJ_eta0", &out_constituentsJ_eta0, "constituentsJ_eta0/F");
+    //m_outTree->Branch("constituentsJ_phi0", &out_constituentsJ_phi0, "constituentsJ_phi0/F");
+    //m_outTree->Branch("constituentsJ_E0", &out_constituentsJ_E0, "constituentsJ_E0/F");
+    //m_outTree->Branch("constituentsJ_pt1", &out_constituentsJ_pt1, "constituentsJ_pt1/F");
+    //m_outTree->Branch("constituentsJ_eta1", &out_constituentsJ_eta1, "constituentsJ_eta1/F");
+    //m_outTree->Branch("constituentsJ_phi1", &out_constituentsJ_phi1, "constituentsJ_phi1/F");
+    //m_outTree->Branch("constituentsJ_E1", &out_constituentsJ_E1, "constituentsJ_E1/F");
     if (m_doJets) {
         m_outTree->Branch("mj", &out_mj, "mj/F");
         m_outTree->Branch("ptj", &out_ptj, "ptj/F");
@@ -363,6 +437,17 @@ void dijetISR_MTtoTT::resetBranches() {
         out_D2J = -999;
         out_C2J = -999;
         out_tau21J = -999;
+        out_ptJ_ungroomed = -999;
+        out_tau21J_ungroomed = -999;
+        out_tau21JDDT = -999;
+        //out_constituentsJ_pt0 = -999;
+        //out_constituentsJ_eta0 = -999;
+        //out_constituentsJ_phi0 = -999;
+        //out_constituentsJ_E0 = -999;
+        //out_constituentsJ_pt1 = -999;
+        //out_constituentsJ_eta1 = -999;
+        //out_constituentsJ_phi1 = -999;
+        //out_constituentsJ_E1 = -999;
         out_ptgamma = -999;
         out_etagamma = -999;
         out_phigamma = -999;

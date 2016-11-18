@@ -67,6 +67,12 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         std::vector<float> *in_D2J; //!
         std::vector<float> *in_C2J; //!
         std::vector<float> *in_tau21J; //!
+        std::vector<float> *in_ptJ_ungroomed; //!
+        std::vector<float> *in_tau21J_ungroomed; //!
+        //std::vector<std::vector<float> > *in_constituentsJ_pt; //!
+        //std::vector<std::vector<float> > *in_constituentsJ_eta; //!
+        //std::vector<std::vector<float> > *in_constituentsJ_phi; //!
+        //std::vector<std::vector<float> > *in_constituentsJ_E; //!
         int in_ngamma; //!
         std::vector<float> *in_ptgamma; //!
         std::vector<float> *in_etagamma; //!
@@ -90,6 +96,17 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         float out_D2J; //!
         float out_C2J; //!
         float out_tau21J; //!
+        float out_ptJ_ungroomed; //!
+        float out_tau21J_ungroomed; //!
+        float out_tau21JDDT; //!
+        //float out_constituentsJ_pt0; 
+        //float out_constituentsJ_eta0; 
+        //float out_constituentsJ_phi0; 
+        //float out_constituentsJ_E0; 
+        //float out_constituentsJ_pt1; 
+        //float out_constituentsJ_eta1; 
+        //float out_constituentsJ_phi1; 
+        //float out_constituentsJ_E1; 
         float out_ptgamma; //!
         float out_etagamma; //!
         float out_phigamma; //!

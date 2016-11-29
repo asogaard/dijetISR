@@ -25,7 +25,7 @@ if args.use_inputFileList:
     if ("JETM" not in deriv and "EXOT" not in deriv):
         raise Exception("Invalid file list name!  Must be of form <name>.<derivation>.list")
 else:
-    deriv = 'EXOT188Kernel'
+    deriv = 'EXOT18Kernel'
 
 print(deriv)
 

@@ -16,11 +16,11 @@ class dijetISR_MiniTree : public HelpTreeBase {
         ~dijetISR_MiniTree();
 
         void AddEventUser(const std::string detailStr = "");
-        void AddFatJetsUser(const std::string &, const std::string &, const std::string &);
+        void AddFatJetsUser(const std::string, const std::string, const std::string);
         void FillEventUser(const xAOD::EventInfo *eventInfo);
-        void FillFatJetsUser(const xAOD::Jet *fatjet, const std::string &, const std::string &);
+        void FillFatJetsUser(const xAOD::Jet *fatjet, const std::string, const std::string);
         void ClearEventUser();
-        void ClearFatJetsUser(const std::string &, const std::string &);
+        void ClearFatJetsUser(const std::string, const std::string);
 };
 
 #endif

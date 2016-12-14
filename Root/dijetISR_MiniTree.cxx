@@ -72,16 +72,16 @@ void dijetISR_MiniTree::FillFatJetsUser(const xAOD::Jet *fatjet, const std::stri
             // clusters from jet (if we don't have these, we are SOL anyways)
             xAOD::JetConstituentVector clusters = parent->getConstituents();
             
-            if (clusters.size()) {
-                // make pseudo jets of the clusters
-                std::vector<fastjet::PseudoJet> jet_inputs;
-                TLorentzVector temp_p4;
-                for (auto c : clusters) {
-                    if (c->e()<0) continue;
-                    temp_p4.SetPtEtaPhiM(c->pt(), c->eta(), c->phi(), c->m());
-                    jet_inputs.push_back(fastjet::PseudoJet(temp_p4.Px(),temp_p4.Py(),temp_p4.Pz(),temp_p4.E()));
-                }
+            // make pseudo jets of the clusters
+            std::vector<fastjet::PseudoJet> jet_inputs;
+            TLorentzVector temp_p4;
+            for (auto c : clusters) {
+                if (c->e()<0) continue;
+                temp_p4.SetPtEtaPhiM(c->pt(), c->eta(), c->phi(), c->m());
+                jet_inputs.push_back(fastjet::PseudoJet(temp_p4.Px(),temp_p4.Py(),temp_p4.Pz(),temp_p4.E()));
+            }
 
+            if (jet_inputs.size()) {
                 // anti-kt it up
                 fastjet::JetDefinition jet_def = fastjet::JetDefinition(fastjet::antikt_algorithm, 1.0, fastjet::E_scheme, fastjet::Best);
                 fastjet::ClusterSequence clust_seq = fastjet::ClusterSequence(jet_inputs, jet_def);
@@ -97,10 +97,12 @@ void dijetISR_MiniTree::FillFatJetsUser(const xAOD::Jet *fatjet, const std::stri
                     }
                 }
 
-                jet_SoftDrop = tool_SoftDrop(jet_Ungroomed);
-                sd_m = jet_SoftDrop.m() / 1000.;
-                sd_pt = jet_SoftDrop.pt() / 1000.;
-                sd_tau21_wta = nSub2_beta1(jet_SoftDrop) / nSub1_beta1(jet_SoftDrop);
+                if (jet_Ungroomed.has_constituents()) {
+                    jet_SoftDrop = tool_SoftDrop(jet_Ungroomed);
+                    sd_m = jet_SoftDrop.m() / 1000.;
+                    sd_pt = jet_SoftDrop.pt() / 1000.;
+                    sd_tau21_wta = nSub2_beta1(jet_SoftDrop) / nSub1_beta1(jet_SoftDrop);
+                }
             }
         }
     }

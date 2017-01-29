@@ -25,7 +25,13 @@ if args.use_inputFileList:
     if ("JETM" not in deriv and "EXOT" not in deriv):
         raise Exception("Invalid file list name!  Must be of form <name>.<derivation>.list")
 else:
-    deriv = 'EXOT18Kernel'
+    inputstring = str.split((args.input_filename)[0], "/")
+    dname = str.split(inputstring[-1], ".")
+    dname1 = str.split(dname[0], "_")
+    if "DAOD" in dname1[0]:
+        deriv = dname1[1] + "Kernel"
+    else:
+        deriv = 'EXOT18Kernel'
 
 print(deriv)
 
@@ -59,8 +65,8 @@ c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
                             "m_verbose"               : False,
                             "m_sort"                  : True,
                             "m_saveAllCleanDecisions" : True,
-                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_June2015.config",
-                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_June2015.config",
+                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
+                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
                             "m_doCleaning"            : False,
                             #"m_JESUncertConfig"       : "$ROOTCOREBIN/data/JetUncertainties/UJ_2015/ICHEP2016/HbbTagging_strong.config",
                             #"m_JESUncertMCType"       : "MC15",
@@ -97,8 +103,8 @@ c.setalg("JetCalibrator", { "m_name"                  : "JetCalibrator",
                             "m_verbose"               : False,
                             "m_sort"                  : True,
                             "m_saveAllCleanDecisions" : True,
-                            "m_calibConfigFullSim"    : "JES_MC15cRecommendation_May2016.config",
-                            "m_calibConfigData"       : "JES_MC15cRecommendation_May2016.config",
+                            "m_calibConfigFullSim"    : "JES_data2016_data2015_Recommendation_Dec2016.config",
+                            "m_calibConfigData"       : "JES_data2016_data2015_Recommendation_Dec2016.config",
                             "m_calibSequence"         : jet_calibSeq,
                             "m_setAFII"               : False,
                             #"m_JESUncertConfig"       : "$ROOTCOREBIN/data/JetUncertainties/JES_2015/ICHEP2016/JES2015_SR_Scenario1.config",

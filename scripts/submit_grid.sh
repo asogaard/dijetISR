@@ -24,22 +24,22 @@ then
 fi
 
 # data15
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/data15.JETM6.list        --inputList --inputDQ2 --submitDir ${SUFFIX}_data15 --force        ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/data15.EXOT18.list        --inputList --inputRucio --submitDir ${SUFFIX}_data15 --force        ${PRUN}
 
 # data16
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/data16.JETM6.list        --inputList --inputDQ2 --submitDir ${SUFFIX}_data16 --force        ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/data16.EXOT18.list        --inputList --inputRucio --submitDir ${SUFFIX}_data16 --force        ${PRUN}
 
 # jetjet
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/jetjet.Sherpa.JETM6.list --inputList --inputDQ2 --submitDir ${SUFFIX}_jetjet --force --isMC ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/jetjet.EXOT18.list        --inputList --inputRucio --submitDir ${SUFFIX}_jetjet --force --isMC ${PRUN}
 
 # WHad
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/WHad.JETM6.list          --inputList --inputDQ2 --submitDir ${SUFFIX}_WHad   --force --isMC ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/WHad.EXOT18.list          --inputList --inputRucio --submitDir ${SUFFIX}_WHad   --force --isMC ${PRUN}
 
 # ZHad
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/ZHad.JETM6.list          --inputList --inputDQ2 --submitDir ${SUFFIX}_ZHad   --force --isMC ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/ZHad.EXOT18.list          --inputList --inputRucio --submitDir ${SUFFIX}_ZHad   --force --isMC ${PRUN}
 
 # ISRjet signal
-./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/signal.ISRjet.JETM8.list --inputList --inputDQ2 --submitDir ${SUFFIX}_signal --force --isMC ${PRUN}
+./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/signal.ISRjet.EXOT18.list --inputList --inputRucio --submitDir ${SUFFIX}_signal --force --isMC ${PRUN}
 
 # ttbar
-#./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/ttbar.JETM6.list  --inputList --inputDQ2 --submitDir ${SUFFIX}_ttbar  --force --isMC ${PRUN}
+#./xAODAnaHelpers/scripts/xAH_run.py --config ${CONFIG} --files dijetISR/etc/ttbar.JETM6.list  --inputList --inputRucio --submitDir ${SUFFIX}_ttbar  --force --isMC ${PRUN}

@@ -49,6 +49,7 @@ void dijetISR_MiniTree::FillFatJetsUser(const xAOD::Jet *fatjet, const std::stri
     else m_fatjet_tam.push_back(-999.);
 
     // soft drop mass
+    /*
     static fastjet::contrib::SoftDrop tool_SoftDrop(0.0, 0.1);
     static fastjet::contrib::Nsubjettiness nSub1_beta1(1, fastjet::contrib::OnePass_WTA_KT_Axes(), fastjet::contrib::UnnormalizedMeasure(1.0));
     static fastjet::contrib::Nsubjettiness nSub2_beta1(2, fastjet::contrib::OnePass_WTA_KT_Axes(), fastjet::contrib::UnnormalizedMeasure(1.0));
@@ -109,6 +110,7 @@ void dijetISR_MiniTree::FillFatJetsUser(const xAOD::Jet *fatjet, const std::stri
     m_fatjet_sd_m.push_back(sd_m);
     m_fatjet_sd_pt.push_back(sd_pt);
     m_fatjet_sd_tau21_wta.push_back(sd_tau21_wta);
+    */
 }
 
 void dijetISR_MiniTree::ClearEventUser() {

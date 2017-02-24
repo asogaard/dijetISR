@@ -59,6 +59,8 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         int in_lumiblock; //!
         float in_weight; //!
         std::vector<std::string> *in_passedTriggers; //!
+        int in_NPV; //!
+        float in_avgmu; //!
         int in_nJ; //!
         std::vector<float> *in_EJ; //!
         std::vector<float> *in_ptJ; //!
@@ -69,6 +71,11 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         std::vector<float> *in_tau21J; //!
         std::vector<float> *in_ptJ_ungroomed; //!
         std::vector<float> *in_tau21J_ungroomed; //!
+        std::vector<int> *in_ntrk; //!
+        //std::vector<float> *in_mJ_trackAssisted; //!
+        //std::vector<float> *in_mJ_softDrop; //!
+        //std::vector<float> *in_ptJ_softDrop; //!
+        //std::vector<float> *in_tau21J_softDrop; //!
         //std::vector<std::vector<float> > *in_constituentsJ_pt; //!
         //std::vector<std::vector<float> > *in_constituentsJ_eta; //!
         //std::vector<std::vector<float> > *in_constituentsJ_phi; //!
@@ -87,6 +94,8 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         TTree *m_outTree; //!
         int out_runNumber; //!
         long long out_eventNumber; //!
+        int out_NPV; //!
+        float out_avgmu; //!
         int out_category; //!
         float out_weight; //!
         float out_mJ; //!
@@ -98,6 +107,11 @@ class dijetISR_MTtoTT : public xAH::Algorithm {
         float out_tau21J; //!
         float out_ptJ_ungroomed; //!
         float out_tau21J_ungroomed; //!
+        int out_ntrk; //!
+        //float out_mJ_trackAssisted; //!
+        //float out_mJ_softDrop; //!
+        //float out_ptJ_softDrop; //!
+        //float out_tau21J_softDrop; //!
         float out_tau21JDDT; //!
         //float out_constituentsJ_pt0; 
         //float out_constituentsJ_eta0; 

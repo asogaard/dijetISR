@@ -19,7 +19,7 @@ ClassImp(dijetISR_MTtoTT)
 dijetISR_MTtoTT::dijetISR_MTtoTT() {
     // options
     m_doJets = false;
-    m_doJets = false;
+    m_doPhotons = false;
     m_mc = false;
     m_lumi = -1.;
     m_applyFinalWeight = false;
@@ -129,6 +129,8 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         
     out_runNumber = (m_mc) ? in_mcChannelNumber : in_runNumber;
     out_eventNumber = in_eventNumber;
+    out_NPV = in_NPV;
+    out_avgmu = in_avgmu;
 
     // LASER - TODO: put in PRW
     
@@ -190,32 +192,54 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
         if (in_nJ > 1) {
             TLorentzVector tlvJ0; tlvJ0.SetPtEtaPhiE(in_ptJ->at(0), in_etaJ->at(0), in_phiJ->at(0), in_EJ->at(0));
             TLorentzVector tlvJ1; tlvJ1.SetPtEtaPhiE(in_ptJ->at(1), in_etaJ->at(1), in_phiJ->at(1), in_EJ->at(1));
+            //TLorentzVector tlvJ0; tlvJ0.SetPtEtaPhiM(in_ptJ->at(0), in_etaJ->at(0), in_phiJ->at(0), in_mJ_trackAssisted->at(0));
+            //TLorentzVector tlvJ1; tlvJ1.SetPtEtaPhiM(in_ptJ->at(1), in_etaJ->at(1), in_phiJ->at(1), in_mJ_trackAssisted->at(1));
             float rho0 = log(pow(tlvJ0.M(), 2) / tlvJ0.Pt());
             float rho1 = log(pow(tlvJ1.M(), 2) / tlvJ1.Pt());
-            float ddt0 = in_tau21J->at(0) + 0.096605 * (rho0 - 1.5);
-            float ddt1 = in_tau21J->at(1) + 0.096605 * (rho1 - 1.5);
+            float ddt0 = in_tau21J->at(0) +  0.0938817 * (rho0 - 1.5);
+            float ddt1 = in_tau21J->at(1) +  0.0938817 * (rho1 - 1.5);
             iJ = (ddt0 < ddt1) ? 0 : 1;
         }
 
-        // J pt > 450
-        if (!(in_ptJ->at(iJ) > 450.)) goto postj;
+        /*  
+        // LASER - SOFT DROP
+        // take the highest pt soft drop jet
+        if (in_nJ > 1) {
+            for (int i = 0; i < in_nJ; i++) {
+                if (in_ptJ_softDrop->at(i) > in_ptJ_softDrop->at(iJ)) iJ = i;
+            }
+        }
+        */
 
         // J information
-        TLorentzVector tlvJ; tlvJ.SetPtEtaPhiE(in_ptJ->at(iJ), in_etaJ->at(iJ), in_phiJ->at(iJ), in_EJ->at(iJ));
+        TLorentzVector tlvJ; 
+        tlvJ.SetPtEtaPhiE(in_ptJ->at(iJ), in_etaJ->at(iJ), in_phiJ->at(iJ), in_EJ->at(iJ));
+        //tlvJ.SetPtEtaPhiM(in_ptJ_softDrop->at(iJ), in_etaJ->at(iJ), in_phiJ->at(iJ), in_mJ_softDrop->at(iJ));
+        //tlvJ.SetPtEtaPhiM(in_ptJ->at(iJ), in_etaJ->at(iJ), in_phiJ->at(iJ), in_mJ_trackAssisted->at(iJ));
         out_mJ = tlvJ.M();
-        out_ptJ = in_ptJ->at(iJ);
-        out_etaJ = in_etaJ->at(iJ);
-        out_phiJ = in_phiJ->at(iJ);
+        out_ptJ = tlvJ.Pt();
+        out_etaJ = tlvJ.Eta();
+        out_phiJ = tlvJ.Phi();
         out_D2J = in_D2J->at(iJ);
         out_C2J = in_C2J->at(iJ);
+        out_ntrk = in_ntrk->at(iJ);
         out_tau21J = in_tau21J->at(iJ);
         out_ptJ_ungroomed = in_ptJ_ungroomed->at(iJ);
         out_tau21J_ungroomed = in_tau21J_ungroomed->at(iJ);
+        //out_mJ_trackAssisted = in_mJ_trackAssisted->at(iJ);
+        //out_mJ_softDrop = in_mJ_softDrop->at(iJ);
+        //out_ptJ_softDrop = in_ptJ_softDrop->at(iJ);
+        //out_tau21J_softDrop = in_tau21J_softDrop->at(iJ);
+        
+        // J pt > 450
+        if (!(tlvJ.Pt() > 450.)) goto postj;
 
-        // explicit rho cut
+        // LASER - RHO
         float rho = log(pow(tlvJ.M(), 2) / tlvJ.Pt());
         if (rho < 1.5 || rho > 5.) goto postj;
-        float ddt = in_tau21J->at(iJ) + 0.096605 * (rho - 1.5);
+        float ddt = in_tau21J->at(iJ) +  0.0938817 * (rho - 1.5);
+        //float ddt = in_tau21J_ungroomed->at(iJ) + 0.0803657 * (rho - 1.5);
+        //float ddt = in_tau21J->at(iJ) + 0.0841946 * (rho - 1.5);
         out_tau21JDDT = ddt;
 
         // constituent information
@@ -246,13 +270,13 @@ EL::StatusCode dijetISR_MTtoTT::execute() {
                 TLorentzVector tlvj; tlvj.SetPtEtaPhiE(in_ptj->at(ij), in_etaj->at(ij), in_phij->at(ij), in_Ej->at(ij));
                 if (fabs(tlvJ.DeltaPhi(tlvj)) > TMath::Pi() / 2.) {
                     // j pt > 450
-                    if (!(in_ptj->at(ij) > 450.)) goto postj;
+                    if (!(tlvj.Pt() > 450.)) goto postj;
 
                     // j information
                     out_mj = tlvj.M();
-                    out_ptj = in_ptj->at(ij);
-                    out_etaj = in_etaj->at(ij);
-                    out_phij = in_phij->at(ij);
+                    out_ptj = tlvj.Pt();
+                    out_etaj = tlvj.Eta();
+                    out_phij = tlvj.Phi();
                     out_dEtaJj = fabs(tlvJ.Eta() - tlvj.Eta());
                     out_dPhiJj = tlvJ.DeltaPhi(tlvj);
                     out_dRJj = tlvJ.DeltaR(tlvj);
@@ -312,9 +336,14 @@ void dijetISR_MTtoTT::initializeVectors() {
     in_phiJ = 0;
     in_D2J = 0;
     in_C2J = 0;
+    in_ntrk = 0;
     in_tau21J = 0;
     in_ptJ_ungroomed = 0;
     in_tau21J_ungroomed = 0;
+    //in_mJ_trackAssisted = 0;
+    //in_mJ_softDrop = 0;
+    //in_ptJ_softDrop = 0;
+    //in_tau21J_softDrop = 0;
     //in_constituentsJ_pt = 0;
     //in_constituentsJ_eta = 0;
     //in_constituentsJ_phi = 0;
@@ -335,6 +364,8 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("lumiBlock", &in_lumiblock);
     wk()->tree()->SetBranchAddress("weight", &in_weight);
     wk()->tree()->SetBranchAddress("passedTriggers", &in_passedTriggers);
+    wk()->tree()->SetBranchAddress("NPV", &in_NPV);
+    wk()->tree()->SetBranchAddress("averageInteractionsPerCrossing", &in_avgmu);
     wk()->tree()->SetBranchAddress("nfatjet", &in_nJ);
     wk()->tree()->SetBranchAddress("fatjet_E", &in_EJ);
     wk()->tree()->SetBranchAddress("fatjet_pt", &in_ptJ);
@@ -345,6 +376,11 @@ void dijetISR_MTtoTT::initializeInTree() {
     wk()->tree()->SetBranchAddress("fatjet_tau21_wta", &in_tau21J);
     wk()->tree()->SetBranchAddress("fatjet_pt_ungroomed", &in_ptJ_ungroomed);
     wk()->tree()->SetBranchAddress("fatjet_tau21_wta_ungroomed", &in_tau21J_ungroomed);
+    wk()->tree()->SetBranchAddress("fatjet_nTracks", &in_ntrk);
+    //wk()->tree()->SetBranchAddress("fatjet_tam", &in_mJ_trackAssisted);
+    //wk()->tree()->SetBranchAddress("fatjet_sd_m", &in_mJ_softDrop);
+    //wk()->tree()->SetBranchAddress("fatjet_sd_pt", &in_ptJ_softDrop);
+    //wk()->tree()->SetBranchAddress("fatjet_sd_tau21_wta", &in_tau21J_softDrop);
     //wk()->tree()->SetBranchAddress("fatjet_constituent_pt", &in_constituentsJ_pt);
     //wk()->tree()->SetBranchAddress("fatjet_constituent_eta", &in_constituentsJ_eta);
     //wk()->tree()->SetBranchAddress("fatjet_constituent_phi", &in_constituentsJ_phi);
@@ -369,6 +405,8 @@ void dijetISR_MTtoTT::initializeOutTree() {
     
     m_outTree->Branch("runNumber", &out_runNumber, "runNumber/I");
     m_outTree->Branch("eventNumber", &out_eventNumber, "eventNumber/LI");
+    m_outTree->Branch("NPV", &out_NPV, "NPV/I");
+    m_outTree->Branch("avgmu", &out_avgmu, "avgmu/F");
     m_outTree->Branch("category", &out_category, "category/I");
     m_outTree->Branch("weight", &out_weight, "weight/F");
     m_outTree->Branch("mJ", &out_mJ, "mJ/F");
@@ -381,6 +419,11 @@ void dijetISR_MTtoTT::initializeOutTree() {
     m_outTree->Branch("ptJ_ungroomed", &out_ptJ_ungroomed, "ptJ_ungroomed/F");
     m_outTree->Branch("tau21J_ungroomed", &out_tau21J_ungroomed, "tau21J_ungroomed/F");
     m_outTree->Branch("tau21JDDT", &out_tau21JDDT, "tau21JDDT/F");
+    m_outTree->Branch("ntrk", &out_ntrk, "ntrk/I");
+    //m_outTree->Branch("mJ_trackAssisted", &out_mJ_trackAssisted, "mJ_trackAssited/F");
+    //m_outTree->Branch("mJ_softDrop", &out_mJ_softDrop, "mJ_softDrop/F");
+    //m_outTree->Branch("ptJ_softDrop", &out_ptJ_softDrop, "ptJ_softDrop/F");
+    //m_outTree->Branch("tau21J_softDrop", &out_tau21J_softDrop, "tau21J_softDrop/F");
     //m_outTree->Branch("constituentsJ_pt0", &out_constituentsJ_pt0, "constituentsJ_pt0/F");
     //m_outTree->Branch("constituentsJ_eta0", &out_constituentsJ_eta0, "constituentsJ_eta0/F");
     //m_outTree->Branch("constituentsJ_phi0", &out_constituentsJ_phi0, "constituentsJ_phi0/F");
@@ -428,6 +471,8 @@ void dijetISR_MTtoTT::setSumOfWeights() {
 void dijetISR_MTtoTT::resetBranches() {
         out_runNumber = -999;
         out_eventNumber = -999;
+        out_NPV = -999;
+        out_avgmu = -999;
         out_category = _none;
         out_weight = -999;
         out_mJ = -999;
@@ -440,6 +485,11 @@ void dijetISR_MTtoTT::resetBranches() {
         out_ptJ_ungroomed = -999;
         out_tau21J_ungroomed = -999;
         out_tau21JDDT = -999;
+        out_ntrk = -999;
+        //out_mJ_trackAssisted = -999;
+        //out_mJ_softDrop = -999;
+        //out_ptJ_softDrop = -999;
+        //out_tau21J_softDrop = -999;
         //out_constituentsJ_pt0 = -999;
         //out_constituentsJ_eta0 = -999;
         //out_constituentsJ_phi0 = -999;

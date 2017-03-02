@@ -51,21 +51,59 @@ EL::StatusCode dijetISR_DAODtoMT::initialize() {
     m_event = wk()->xaodEvent();
     m_store = wk()->xaodStore();
 
-    TTree *outTree = new TTree("MiniTree", "MiniTree");
+    return EL::StatusCode::SUCCESS;
+}
+
+EL::StatusCode dijetISR_DAODtoMT::addTree(std::string name) {
+    std::string treeName = (name == "Nominal") ? "MiniTree" : "MiniTree_" + name;
+    TTree *outTree = new TTree(treeName.c_str(), treeName.c_str());
     TFile *treeFile = wk()->getOutputFile("MiniTree");
     outTree->SetDirectory(treeFile);
-    
-    m_tree = new dijetISR_MiniTree(m_event, outTree, treeFile);
-    m_tree->AddEvent(m_eventInfoDetailStr);
-    m_tree->AddTrigger(m_trigDetailStr);
-    m_tree->AddFatJets(m_fatJetDetailStr);
-    if (m_doJets) m_tree->AddJets(m_jetDetailStr);
-    if (m_doPhotons) m_tree->AddPhotons(m_photonDetailStr);
+
+    dijetISR_MiniTree *tree = new dijetISR_MiniTree(m_event, outTree, treeFile);
+    tree->AddEvent(m_eventInfoDetailStr);
+    tree->AddTrigger(m_trigDetailStr);
+    tree->AddFatJets(m_fatJetDetailStr);
+    if (m_doJets) tree->AddJets(m_jetDetailStr);
+    if (m_doPhotons) tree->AddPhotons(m_photonDetailStr);
+
+    m_trees[name] = tree;
 
     return EL::StatusCode::SUCCESS;
 }
 
 EL::StatusCode dijetISR_DAODtoMT::execute() {
+    if (!(m_trees["Nominal"])) addTree("Nominal");
+    executeSingle();
+
+    std::vector<std::string> *fatJetSysNames = 0;
+    RETURN_CHECK("dijetISR_DAODtoMT::initializeTrees()", HelperFunctions::retrieve(fatJetSysNames, m_fatJetContainerName + "_Algo", 0, m_store), "");
+    for (std::string &name : *fatJetSysNames) {
+        if (name.empty()) continue;
+        if (!(m_trees[name])) addTree(name);
+        executeSingle("", name);
+    }
+
+    if (m_doJets) {
+        std::vector<std::string> *jetSysNames = 0;
+        RETURN_CHECK("dijetISR_DAODtoMT::initializeTrees()", HelperFunctions::retrieve(jetSysNames, m_jetContainerName + "_Algo", 0, m_store), "");
+        for (std::string &name : *jetSysNames) {
+            if (name.empty()) continue;
+            if (!(m_trees[name])) addTree(name);
+            executeSingle(name, "");
+        }
+    }
+
+    return EL::StatusCode::SUCCESS;
+}
+
+EL::StatusCode dijetISR_DAODtoMT::executeSingle(std::string resolvedSys, std::string boostedSys) {
+    // failsafe
+    if (resolvedSys != "" && boostedSys != "") {
+        std::cout << "Both resolvedSys and boostedSys are non-empty! WTF?!?" << std::endl;
+        return EL::StatusCode::FAILURE;
+    }
+
     // get event info
     const xAOD::EventInfo *eventInfo = 0;
     RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(eventInfo, "EventInfo", m_event, m_store), "");
@@ -84,11 +122,15 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
 
     // get fat jets
     const xAOD::JetContainer *fatJets = 0;
-    RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(fatJets, m_fatJetContainerName, m_event, m_store), "");
+    std::string fatJetContName = m_fatJetContainerName;
+    if (boostedSys != "") fatJetContName += boostedSys;
+    RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(fatJets, fatJetContName, m_event, m_store), "");
 
     // get jets
     const xAOD::JetContainer *jets = 0;
-    if (m_doJets) RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(jets, m_jetContainerName, m_event, m_store), "");
+    std::string jetContName = m_jetContainerName;
+    if (resolvedSys != "") jetContName += resolvedSys;
+    if (m_doJets) RETURN_CHECK("dijetISR_DAODtoMT::execute()", HelperFunctions::retrieve(jets, jetContName, m_event, m_store), "");
 
     // get photons
     const xAOD::PhotonContainer *photons = 0;
@@ -175,12 +217,19 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
     }
 
     // fill tree branches
-    m_tree->FillEvent(eventInfo, m_event);
-    m_tree->FillTrigger(eventInfo);
-    m_tree->FillFatJets(fatJets);
-    if (m_doJets) m_tree->FillJets(jets);
-    if (m_doPhotons) m_tree->FillPhotons(photons);
-    m_tree->Fill();
+    dijetISR_MiniTree *tree = m_trees["Nominal"];
+    if (resolvedSys != "") tree = m_trees[resolvedSys];
+    if (boostedSys != "") tree = m_trees[boostedSys];
+    if (!tree) {
+        std::cout << "tree is nullptr!  WTF?!?" << std::endl;
+        return EL::StatusCode::FAILURE;
+    }
+    tree->FillEvent(eventInfo, m_event);
+    tree->FillTrigger(eventInfo);
+    tree->FillFatJets(fatJets);
+    if (m_doJets) tree->FillJets(jets);
+    if (m_doPhotons) tree->FillPhotons(photons);
+    tree->Fill();
 
     return EL::StatusCode::SUCCESS;
 }

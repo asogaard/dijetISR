@@ -1,7 +1,9 @@
 from xAH_config import xAH_config
 
+# basic xAH configuration
 c = xAH_config()
 
+# single jet triggers
 triggersList = [
     "HLT_j340",
     "HLT_j380",
@@ -17,6 +19,7 @@ triggersList = [
 ]
 triggers = ",".join(triggersList)
 
+# get derivation from file list name (default is EXOT18)
 deriv = ''
 if args.use_inputFileList:
     inputstring = str.split((args.input_filename)[0], ".")
@@ -33,13 +36,13 @@ else:
     else:
         deriv = 'EXOT18Kernel'
 
-print(deriv)
-
+# small-R jet sequence
 if args.is_MC:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC'
 else:
     jet_calibSeq = 'JetArea_Residual_Origin_EtaJES_GSC_Insitu'
 
+# basic event selection
 c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelection",
                                   "m_debug"                 : False,
                                   "m_derivationName"        : deriv,
@@ -56,28 +59,28 @@ c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelecti
                                   "m_useMetaData"           : True
                                 } )
 
+# fat jet calibrator
 c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
                             "m_inContainerName"       : "AntiKt10LCTopoTrimmedPtFrac5SmallR20Jets",
                             "m_jetAlgo"               : "AntiKt10LCTopoTrimmedPtFrac5SmallR20",
-                            "m_outputAlgo"            : "AntiKt10LCTopoTrimmedPtFrac5SmallR20_Calib_Algo",
                             "m_outContainerName"      : "CalibFatJets",
+                            "m_outputAlgo"            : "AntiKt10LCTopoTrimmedPtFrac5SmallR20_Calib_Algo",
                             "m_debug"                 : False,
                             "m_verbose"               : False,
                             "m_sort"                  : True,
                             "m_saveAllCleanDecisions" : True,
-                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
-                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
-                            "m_doCleaning"            : False,
-                            #"m_JESUncertConfig"       : "$ROOTCOREBIN/data/JetUncertainties/UJ_2015/ICHEP2016/HbbTagging_strong.config",
-                            #"m_JESUncertMCType"       : "MC15",
-                            "m_calibSequence"         : "EtaJES_JMS",
-                            "m_setAFII"               : False,
                             "m_jetCleanCutLevel"      : "LooseBad",
                             "m_jetCleanUgly"          : True,
                             "m_cleanParent"           : True,
                             "m_applyFatJetPreSel"     : True,
-                            "m_systName"              : "Nominal",
-                            "m_systVal"               : 0
+                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
+                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
+                            "m_calibSequence"         : "EtaJES_JMS",
+                            "m_JESUncertConfig"       : "UJ_2016/Moriond2017/UJ2016_CombinedMass_medium.config",
+                            "m_JESUncertMCType"       : "MC15c",
+                            "m_setAFII"               : False,
+                            "m_systName"              : "All",
+                            "m_systVal"               : 1
                           } )
 
 c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
@@ -87,7 +90,7 @@ c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
                           "m_outputAlgo"              : "SelFatJets_Algo",
                           "m_decorateSelectedObjects" : False,
                           "m_createSelectedContainer" : True,  
-                          "m_cleanJets"               : False,
+                          "m_cleanJets"               : True,
                           "m_pT_min"                  : 200e3,
                           "m_eta_max"                 : 2.0,
                           "m_mass_min"                : 0.1, 
@@ -97,24 +100,26 @@ c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
 c.setalg("JetCalibrator", { "m_name"                  : "JetCalibrator",
                             "m_inContainerName"       : "AntiKt4EMTopoJets",
                             "m_jetAlgo"               : "AntiKt4EMTopo",
-                            "m_outputAlgo"            : "AntiKt4EMTopo_Calib_Algo",
                             "m_outContainerName"      : "CalibJets",
+                            "m_outputAlgo"            : "AntiKt4EMTopo_Calib_Algo",
                             "m_debug"                 : False,
                             "m_verbose"               : False,
                             "m_sort"                  : True,
                             "m_saveAllCleanDecisions" : True,
+                            "m_jetCleanCutLevel"      : "LooseBad",
+                            "m_jetCleanUgly"          : True,
                             "m_calibConfigFullSim"    : "JES_data2016_data2015_Recommendation_Dec2016.config",
                             "m_calibConfigData"       : "JES_data2016_data2015_Recommendation_Dec2016.config",
                             "m_calibSequence"         : jet_calibSeq,
                             "m_setAFII"               : False,
-                            #"m_JESUncertConfig"       : "$ROOTCOREBIN/data/JetUncertainties/JES_2015/ICHEP2016/JES2015_SR_Scenario1.config",
-                            #"m_JESUncertMCType"       : "MC15",
+                            "m_JESUncertConfig"       : "JES_2016/Moriond2017/JES2016_SR_Scenario1.config",
+                            "m_JESUncertMCType"       : "MC15",
                             "m_JERUncertConfig"       : "JetResolution/Prerec2015_xCalib_2012JER_ReducedTo9NP_Plots_v2.root",
                             "m_JERFullSys"            : False,
                             "m_JERApplyNominal"       : False,
                             "m_redoJVT"               : False,
-                            "m_systName"              : "Nominal",
-                            "m_systVal"               : 0
+                            "m_systName"              : "All",
+                            "m_systVal"               : 1
                           } )
 
 c.setalg("JetSelector", { "m_name"                    : "JetSelector",
@@ -140,7 +145,7 @@ c.setalg("dijetISR_DAODtoMT", { "m_doJets"               : True,
                                 "m_doPhotons"            : False,
                                 "m_fatJetContainerName"  : "SelFatJets",
                                 "m_jetContainerName"     : "SelJets",
-                                "m_eventInfoDetailStr"   : "pileup",
+                                "m_eventInfoDetailStr"   : "pileup truth",
                                 "m_trigDetailStr"        : "passTriggers",
                                 "m_fatJetDetailStr"      : "kinematic substructure",
                                 "m_jetDetailStr"         : "kinematic",

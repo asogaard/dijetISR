@@ -15,6 +15,9 @@ class dijetISR_DAODtoMT : public xAH::Algorithm {
         virtual EL::StatusCode execute();
         virtual EL::StatusCode histFinalize();
 
+        EL::StatusCode addTree(std::string name);
+        EL::StatusCode executeSingle(std::string resolvedSys = "", std::string boostedSys = "");
+
         bool m_doJets;
         bool m_doPhotons;
         std::string m_fatJetContainerName;
@@ -26,7 +29,7 @@ class dijetISR_DAODtoMT : public xAH::Algorithm {
         std::string m_jetDetailStr;
         std::string m_photonDetailStr;
 
-        dijetISR_MiniTree *m_tree; //!
+        std::map<std::string, dijetISR_MiniTree*> m_trees; //!
         
         ClassDef(dijetISR_DAODtoMT, 1);
 };

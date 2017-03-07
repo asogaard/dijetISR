@@ -3,20 +3,30 @@ from xAH_config import xAH_config
 c = xAH_config()
 
 triggersList = [
-    "HLT_g120_loose",
+    #"HLT_g120_loose",
     "HLT_g140_loose",
-    "HLT_g200_etcut",
-    "HLT_g300_etcut",
+    #"HLT_g200_etcut",
+    #"HLT_g300_etcut",
 ]
 triggers = ",".join(triggersList)
 
-deriv = 'JETM6Kernel'
+deriv = 'EXOT18Kernel'
+
+if args.is_MC:
+    systName = "All"
+    systVal  = 1
+else:
+    systName = "Nominal"
+    systVal  = 0
+    pass
+
+print("systName: '%s', systVal: '%d'" % (systName, systVal))
 
 c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelection",
                                   "m_debug"                 : False,
                                   "m_derivationName"        : deriv,
                                   "m_applyGRLCut"           : False,
-                                  "m_doPUreweighting"       : False,
+                                  "m_doPUreweighting"       : True, # False,
                                   "m_vertexContainerName"   : "PrimaryVertices",
                                   "m_PVNTrack"              : 2,
                                   "m_applyPrimaryVertexCut" : True,
@@ -25,7 +35,8 @@ c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelecti
                                   "m_triggerSelection"      : triggers,
                                   "m_storeTrigDecisions"    : True,
                                   "m_applyTriggerCut"       : False,
-                                  "m_useMetaData"           : True
+                                  "m_useMetaData"           : True,
+                                  "m_isMC"                  : args.is_MC, # @asogaard
                                 } )
 
 c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
@@ -37,8 +48,8 @@ c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
                             "m_verbose"               : False,
                             "m_sort"                  : True,
                             "m_saveAllCleanDecisions" : True,
-                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_June2015.config",
-                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_June2015.config",
+                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
+                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
                             "m_doCleaning"            : False,
                             #"m_JESUncertConfig"       : "$ROOTCOREBIN/data/JetUncertainties/UJ_2015/ICHEP2016/HbbTagging_strong.config",
                             #"m_JESUncertMCType"       : "MC15",
@@ -48,8 +59,8 @@ c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
                             "m_jetCleanUgly"          : True,
                             "m_cleanParent"           : True,
                             "m_applyFatJetPreSel"     : True,
-                            "m_systName"              : "Nominal",
-                            "m_systVal"               : 0
+                            "m_systName"              : systName,
+                            "m_systVal"               : systVal,
                           } )
 
 c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
@@ -60,8 +71,8 @@ c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
                           "m_decorateSelectedObjects" : False,
                           "m_createSelectedContainer" : True,  
                           "m_cleanJets"               : False,
-                          "m_pT_min"                  : 200e3,
-                          "m_eta_max"                 : 2.0,
+                          "m_pT_min"                  : 100e3,
+                          "m_eta_max"                 : 3.0,
                           "m_mass_min"                : 0.1, 
                           "m_useCutFlow"              : True,
                         } )
@@ -70,12 +81,13 @@ c.setalg("PhotonCalibrator", { "m_name"                    : "PhotonCalibrator",
                                "m_inContainerName"         : "Photons",
                                "m_outContainerName"        : "CalibPhotons",
                                "m_outputAlgoSystNames"     : "Photons_Calib_Algo",
-                               "m_esModel"                 : "es2015cPRE",
-                               "m_decorrelationModel"      : "1NP_v1",
+                               "m_esModel"                 : "es2015cPRE", # @TODO: Update
+                               "m_decorrelationModel"      : "1NP_v1", # @TODO: Update
                                "m_useAFII"                 : False,
-                               "m_systName"                : "Nominal",
-                               "m_systVal"                 : 0,
-                               "m_sort"                    : True
+                               "m_systName"                : systName,
+                               "m_systVal"                 : systVal,
+                               "m_sort"                    : True,
+                               "m_randomRunNumber"         : 123456, # @TODO: Update
                               } )
 
 c.setalg("PhotonSelector", { "m_name"                    : "PhotonsSelector",
@@ -86,12 +98,12 @@ c.setalg("PhotonSelector", { "m_name"                    : "PhotonsSelector",
                              "m_decorateSelectedObjects" : False,
                              "m_createSelectedContainer" : True,
                              "m_pass_min"                : 0,
-                             "m_pT_min"                  : 10e3,
+                             "m_pT_min"                  : 100e3,
                              "m_eta_max"                 : 2.37,
                              "m_vetoCrack"               : True,
                              "m_doAuthorCut"             : True,
                              "m_doOQCut"                 : True,
-                             "m_photonIdCut"             : "Tight",
+                             "m_photonIdCut"             : "Tight", # @TODO: Want to propagate loose as well?
                              "m_MinIsoWPCut"             : "FixedCutTightCaloOnly"
                            } )
 

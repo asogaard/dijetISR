@@ -1,7 +1,15 @@
 from xAH_config import xAH_config
 
-c = xAH_config()
+# Script is called from xAODAnaHelpers/scripts/, and dijetISR/scripts/ is not (necessarily) in PYTHONPATH, so set manually
+import os, sys, inspect
+pwd = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
+sys.path.append(pwd)
 
+# Get default algorithm configurations
+from config_DAODtoMT_common import get_defaults
+defaults = get_defaults(args)
+
+# Triggers
 triggersList = [
     #"HLT_g120_loose",
     "HLT_g140_loose",
@@ -10,23 +18,45 @@ triggersList = [
 ]
 triggers = ",".join(triggersList)
 
-deriv = 'EXOT18Kernel'
+# xAODAnaHelper algorithm configuration
+c = xAH_config()
 
-if args.is_MC:
-    systName = "All"
-    systVal  = 1
-else:
-    systName = "Nominal"
-    systVal  = 0
-    pass
+# Basic event selection
+BasicEventSelection = defaults["BasicEventSelection"]
+BasicEventSelection["m_triggerSelection"] = triggers
+c.setalg("BasicEventSelection", BasicEventSelection)
 
-print("systName: '%s', systVal: '%d'" % (systName, systVal))
+# Large-radius jet calibrator # @TODO: Make common for ISR jet and photon?
+c.setalg("JetCalibrator", defaults["FatJetCalibrator"])
 
+# Large-radius jet selector
+FatJetSelector = defaults["FatJetSelector"]
+FatJetSelector["m_pT_min"]  = 100e3
+FatJetSelector["m_eta_max"] = 3.0
+c.setalg("JetSelector", FatJetSelector)
+
+# Photon calibrator
+c.setalg("PhotonCalibrator", defaults["PhotonCalibrator"])
+
+# Photon selector
+c.setalg("PhotonSelector", defaults["PhotonSelector"])
+
+# Dijet + ISR analysis algorithm
+dijetISR_DAODtoMT = defaults["dijetISR_DAODtoMT"]
+dijetISR_DAODtoMT["m_doPhotons"]           = True
+dijetISR_DAODtoMT["m_photonContainerName"] = "SelPhotons"
+dijetISR_DAODtoMT["m_photonDetailStr"]     = "kinematic"
+c.setalg("dijetISR_DAODtoMT", dijetISR_DAODtoMT)
+
+
+
+""" Reference.
+# Basic event selection
 c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelection",
                                   "m_debug"                 : False,
                                   "m_derivationName"        : deriv,
                                   "m_applyGRLCut"           : False,
-                                  "m_doPUreweighting"       : True, # False,
+                                  "m_doPUreweighting"       : True, # False, -- depends on PhotonCalibrator
                                   "m_vertexContainerName"   : "PrimaryVertices",
                                   "m_PVNTrack"              : 2,
                                   "m_applyPrimaryVertexCut" : True,
@@ -39,6 +69,7 @@ c.setalg("BasicEventSelection", { "m_name"                  : "BasicEventSelecti
                                   "m_isMC"                  : args.is_MC, # @asogaard
                                 } )
 
+# Large-radius jet calibrator # @TODO: Make common for ISR jet and photon?
 c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
                             "m_inContainerName"       : "AntiKt10LCTopoTrimmedPtFrac5SmallR20Jets",
                             "m_jetAlgo"               : "AntiKt10LCTopoTrimmedPtFrac5SmallR20",
@@ -48,21 +79,22 @@ c.setalg("JetCalibrator", { "m_name"                  : "FatJetCalibrator",
                             "m_verbose"               : False,
                             "m_sort"                  : True,
                             "m_saveAllCleanDecisions" : True,
-                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
-                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
-                            "m_doCleaning"            : False,
-                            #"m_JESUncertConfig"       : "$ROOTCOREBIN/data/JetUncertainties/UJ_2015/ICHEP2016/HbbTagging_strong.config",
-                            #"m_JESUncertMCType"       : "MC15",
-                            "m_calibSequence"         : "EtaJES_JMS",
-                            "m_setAFII"               : False,
                             "m_jetCleanCutLevel"      : "LooseBad",
                             "m_jetCleanUgly"          : True,
                             "m_cleanParent"           : True,
                             "m_applyFatJetPreSel"     : True,
+                            "m_calibConfigFullSim"    : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
+                            "m_calibConfigData"       : "JES_MC15recommendation_FatJet_Nov2016_QCDCombinationUncorrelatedWeights.config",
+                            #"m_doCleaning"            : False,
+                            "m_calibSequence"         : "EtaJES_JMS",
+                            "m_JESUncertConfig"       : "UJ_2016/Moriond2017/UJ2016_CombinedMass_medium.config",
+                            "m_JESUncertMCType"       : "MC15c",
+                            "m_setAFII"               : False,
                             "m_systName"              : systName,
                             "m_systVal"               : systVal,
                           } )
 
+# Large-radius jet selector # @TODO: Make common for ISR jet and photon?
 c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
                           "m_inContainerName"         : "CalibFatJets",
                           "m_inputAlgo"               : "AntiKt10LCTopoTrimmedPtFrac5SmallR20_Calib_Algo",
@@ -70,13 +102,14 @@ c.setalg("JetSelector", { "m_name"                    : "FatJetSelector",
                           "m_outputAlgo"              : "SelFatJets_Algo",
                           "m_decorateSelectedObjects" : False,
                           "m_createSelectedContainer" : True,  
-                          "m_cleanJets"               : False,
+                          "m_cleanJets"               : True,
                           "m_pT_min"                  : 100e3,
                           "m_eta_max"                 : 3.0,
                           "m_mass_min"                : 0.1, 
                           "m_useCutFlow"              : True,
                         } )
 
+# Photon calibrator
 c.setalg("PhotonCalibrator", { "m_name"                    : "PhotonCalibrator",
                                "m_inContainerName"         : "Photons",
                                "m_outContainerName"        : "CalibPhotons",
@@ -90,6 +123,7 @@ c.setalg("PhotonCalibrator", { "m_name"                    : "PhotonCalibrator",
                                "m_randomRunNumber"         : 123456, # @TODO: Update
                               } )
 
+# Photon selector
 c.setalg("PhotonSelector", { "m_name"                    : "PhotonsSelector",
                              "m_inContainerName"         : "CalibPhotons",
                              "m_inputAlgoSystNames"      : "Photons_Calib_Algo",
@@ -107,12 +141,14 @@ c.setalg("PhotonSelector", { "m_name"                    : "PhotonsSelector",
                              "m_MinIsoWPCut"             : "FixedCutTightCaloOnly"
                            } )
 
+# Dijet + ISR analysis algorithm
 c.setalg("dijetISR_DAODtoMT", { "m_doJets"               : False,
                                 "m_doPhotons"            : True,
                                 "m_fatJetContainerName"  : "SelFatJets",
                                 "m_photonContainerName"  : "SelPhotons",
-                                "m_eventInfoDetailStr"   : "pileup",
+                                "m_eventInfoDetailStr"   : "pileup truth",
                                 "m_trigDetailStr"        : "passTriggers",
                                 "m_fatJetDetailStr"      : "kinematic substructure",
                                 "m_photonDetailStr"      : "kinematic"
                               } )
+"""

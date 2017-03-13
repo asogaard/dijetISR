@@ -59,7 +59,7 @@ def get_defaults(args):
                                         "m_applyPrimaryVertexCut" : True,
                                         "m_applyEventCleaningCut" : True,
                                         "m_applyCoreFlagsCut"     : True,
-                                        #"m_triggerSelection"      : triggers,
+                                        #"m_triggerSelection"      : triggers, # Channel-specific
                                         "m_storeTrigDecisions"    : True,
                                         "m_applyTriggerCut"       : False,
                                         "m_useMetaData"           : True,
@@ -85,12 +85,14 @@ def get_defaults(args):
                                      "m_calibSequence"         : "EtaJES_JMS",
                                      "m_JESUncertConfig"       : "UJ_2016/Moriond2017/UJ2016_CombinedMass_medium.config",
                                      "m_JESUncertMCType"       : "MC15c",
+                                     #"m_JERUncertConfig"       : "...",
+                                     #"m_JERFullSys"            : True, 
                                      "m_setAFII"               : False,
                                      "m_systName"              : systName,
                                      "m_systVal"               : systVal,
                                      }
     
-    # Large-radius jet selection
+    # Large-radius jet selector
     defaults["FatJetSelector"] = { "m_name"                    : "FatJetSelector",
                                    "m_inContainerName"         : "CalibFatJets",
                                    "m_inputAlgo"               : "AntiKt10LCTopoTrimmedPtFrac5SmallR20_Calib_Algo",
@@ -124,8 +126,8 @@ def get_defaults(args):
                                   "m_JESUncertConfig"       : "JES_2016/Moriond2017/JES2016_SR_Scenario1.config",
                                   "m_JESUncertMCType"       : "MC15",
                                   "m_JERUncertConfig"       : "JetResolution/Prerec2015_xCalib_2012JER_ReducedTo9NP_Plots_v2.root",
-                                  "m_JERFullSys"            : False,
-                                  "m_JERApplyNominal"       : False,
+                                  "m_JERFullSys"            : False, # @TODO: Do JER?
+                                  "m_JERApplyNominal"       : False, # @TODO: Do JER?
                                   "m_redoJVT"               : False,
                                   "m_systName"              : systName,
                                   "m_systVal"               : systVal,
@@ -156,8 +158,8 @@ def get_defaults(args):
                                      "m_inContainerName"         : "Photons",
                                      "m_outContainerName"        : "CalibPhotons",
                                      "m_outputAlgoSystNames"     : "Photons_Calib_Algo",
-                                     "m_esModel"                 : "es2015cPRE", # @TODO: Update
-                                     "m_decorrelationModel"      : "1NP_v1", # @TODO: Update
+                                     "m_esModel"                 : "es2016data_mc15c", # [1]
+                                     "m_decorrelationModel"      : "1NP_v1", # or "FULL_ETACORRELATED_v1" # [2,3]
                                      "m_useAFII"                 : False,
                                      "m_systName"                : systName,
                                      "m_systVal"                 : systVal,
@@ -171,7 +173,7 @@ def get_defaults(args):
                                    "m_inputAlgoSystNames"      : "Photons_Calib_Algo",
                                    "m_outContainerName"        : "SelPhotons",
                                    "m_outputAlgoSystNames"     : "SelPhotons_Algo",
-                                   "m_decorateSelectedObjects" : False,
+                                   "m_decorateSelectedObjects" : True,
                                    "m_createSelectedContainer" : True,
                                    "m_pass_min"                : 0,
                                    "m_pT_min"                  : 100e3,
@@ -179,21 +181,29 @@ def get_defaults(args):
                                    "m_vetoCrack"               : True,
                                    "m_doAuthorCut"             : True,
                                    "m_doOQCut"                 : True,
-                                   "m_photonIdCut"             : "Tight", # @TODO: Want to propagate 'Loose' as well?
-                                   "m_MinIsoWPCut"             : "FixedCutTightCaloOnly"
+                                   "m_photonIdCut"             : "Loose", #  or "Tight"
+                                   "m_MinIsoWPCut"             : "FixedCutLoose" # or "FixedCutTightCaloOnly" # [4]
                                    }
     
     # Dijet + ISR analysis algorithm
     defaults["dijetISR_DAODtoMT"] = { "m_doJets"               : False,
                                       "m_doPhotons"            : False,
                                       "m_fatJetContainerName"  : "SelFatJets",
-                                      #"m_jetContainerName"    : "SelJets", # @TODO: Just keep both in?
-                                      #"m_photonContainerName" : "SelPhotons",
+                                      "m_jetContainerName"     : "SelJets",
+                                      "m_photonContainerName"  : "SelPhotons",
                                       "m_eventInfoDetailStr"   : "pileup truth",
                                       "m_trigDetailStr"        : "passTriggers",
                                       "m_fatJetDetailStr"      : "kinematic substructure",
-                                      #"m_jetDetailStr"         : "kinematic", # @TODO: Just keep both in?
-                                      #"m_photonDetailStr"      : "kinematic",
+                                      "m_jetDetailStr"         : "kinematic", 
+                                      "m_photonDetailStr"      : "kinematic isolation PID effSF", # purity
                                       }
     # Return
     return defaults
+
+
+# References:
+# --------------------------------------
+# [1] https://twiki.cern.ch/twiki/bin/viewauth/AtlasProtected/ElectronPhotonFourMomentumCorrection#Recommendations_for_data15_data1
+# [2] https://twiki.cern.ch/twiki/bin/viewauth/AtlasProtected/ElectronPhotonFourMomentumCorrection#New_correlation_model_to_combine
+# [3] https://twiki.cern.ch/twiki/bin/viewauth/AtlasProtected/ElectronPhotonFourMomentumCorrection#Configuration_properties
+# [4] https://twiki.cern.ch/twiki/bin/view/AtlasProtected/IsolationSelectionTool#Photons

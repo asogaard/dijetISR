@@ -119,7 +119,7 @@ EL::StatusCode dijetISR_DAODtoMT::execute() {
 EL::StatusCode dijetISR_DAODtoMT::executeSingle(const std::string& systName, const SystType& systType) {
 
     // Make sure the output tree exists for the current systematic
-  if (m_trees.count(s_treeName(systName, systType)) == 0) { addTree(s_treeName(systName, systType)); }
+    if (m_trees.count(s_treeName(systName, systType)) == 0) { addTree(s_treeName(systName, systType)); }
 
      // Retrieve containers
     // -------------------------------------------------------------------------

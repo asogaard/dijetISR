@@ -212,6 +212,7 @@ EL::StatusCode dijetISR_DAODtoMT::executeSingle(const std::string& systName, con
 
     if (m_doPhotons) {
 
+      /*
       // Perform simple "overlap removal" of large-radius jets wrt. photons
       // -- Create the new container and its auxiliary store.
       goodFatJets    = new xAOD::JetContainer();
@@ -236,12 +237,15 @@ EL::StatusCode dijetISR_DAODtoMT::executeSingle(const std::string& systName, con
         goodFatJets->push_back( goodJet ); // jet acquires the goodFatJets auxstore
         *goodJet = *jet; // copies auxdata from one auxstore to the other
       }
+      */
 
       // Skim: Requre at least one good fat jet.
-      if (goodFatJets->size() == 0) { return EL::StatusCode::SUCCESS; }
+      //if (goodFatJets->size() == 0) { return EL::StatusCode::SUCCESS; }
+      if (fatJets->size() == 0) { return EL::StatusCode::SUCCESS; }
 
       // Skim: Require at exactly one good photon.
-      if (photons->size() != 1) { return EL::StatusCode::SUCCESS; }
+      //if (photons->size() != 1) { return EL::StatusCode::SUCCESS; }
+      if (photons->size() == 0) { return EL::StatusCode::SUCCESS; }
 
     }
 

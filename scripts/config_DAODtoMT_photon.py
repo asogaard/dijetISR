@@ -31,8 +31,8 @@ c.setalg("JetCalibrator", defaults["FatJetCalibrator"])
 
 # Large-radius jet selector
 FatJetSelector = defaults["FatJetSelector"]
-FatJetSelector["m_pT_min"]  = 100e3
-FatJetSelector["m_eta_max"] = 3.0
+FatJetSelector["m_pT_min"]  = 150e3
+FatJetSelector["m_eta_max"] = 2.5
 c.setalg("JetSelector", FatJetSelector)
 
 # Photon calibrator

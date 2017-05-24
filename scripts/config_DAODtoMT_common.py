@@ -181,8 +181,8 @@ def get_defaults(args):
                                    "m_vetoCrack"               : True,
                                    "m_doAuthorCut"             : True,
                                    "m_doOQCut"                 : True,
-                                   "m_photonIdCut"             : "Loose", #  or "Tight"
-                                   "m_MinIsoWPCut"             : "FixedCutLoose" # or "FixedCutTightCaloOnly" # [4]
+                                   "m_photonIdCut"             : "Tight", #  "Loose" / "Tight"
+                                   "m_MinIsoWPCut"             : "FixedCutTightCaloOnly" # "FixedCutLoose" / "FixedCutTightCaloOnly" # [4]
                                    }
     
     # Dijet + ISR analysis algorithm
